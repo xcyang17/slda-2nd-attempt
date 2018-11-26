@@ -8,6 +8,7 @@ Created on Sun Nov 25 20:14:31 2018
 from tables import *
 import numpy as np
 import timeit
+from collections import Counter
 
 # load R output
 working_dir = "/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/news_category/R_output/"
@@ -37,8 +38,7 @@ docs_txt_lines2 = [line.rstrip('\n') for line in docs_txt_lines] # remove newlin
 # ^^^ keep news_id as character instead of number
 docs_r = list(map(int, docs_txt_lines2))
 
-r_output = [i_txt_lines2, j_txt_lines2, v_txt_lines2, terms_txt_lines2, 
-            docs_txt_lines2]
+r_output = [i_r, j_r, v_r, terms_txt_lines2, docs_r]
 
 for i in range(4):
     print(r_output[i][0:10])
@@ -46,7 +46,7 @@ for i in range(4):
 # initializing the \bar{Z} at random from a uniform multinomial from (1, ..., K = 31)
 K = 31 # number of topics
 doc_term_dict = dict()
-doc_topic_mat = np.zeros((1 + max(docs_r), K))
+doc_topic_mat = np.zeros((len(docs_r), K))
 term_topic_mat = np.zeros((len(terms_txt_lines2), K))
 topic_mat = np.zeros((1, K))
 
@@ -58,7 +58,13 @@ for idx in range(len(j_r)):
     val_len = v_r[idx]
     doc_term_dict[k] = np.random.choice(K-1, val_len)
     # store the n_{d, topic}, n_{word, topic} and n_{topic}
-    doc_topic_mat[int(news_id), j_r[idx]]
+    freq = Counter(doc_term_dict[k])
+    for existent_topic in list(freq.keys()):
+#        print(freq[existent_topic])
+        doc_topic_mat[int(news_id), existent_topic] += freq[existent_topic]
+    # update n_{word, topic}
+    
+    
 
 # number of docs = 124948 < max of news_id (124989)
     
@@ -69,8 +75,10 @@ print('Time: ', stop - start) # 21 seconds
 ## TODO: check correctness of the dictionary initialized above
 ## TODO: store the n_{d, topic}, n_{word, topic} and n_{topic}
 
+x = Counter(doc_term_dict[('68129', 'animals')])
 
 
+'68129', 'animals'
 
 # Gibbs sampler
 L = 5000 # number of iterations
