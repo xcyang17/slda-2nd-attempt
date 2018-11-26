@@ -56,10 +56,16 @@ for idx in range(len(j_r)):
     term = terms_txt_lines2[j_r[idx]] # j_r[idx] as id for `term`
     k = (news_id, term)
     val_len = v_r[idx]
-    doc_term_dict[k] = np.random.choice(K-1, val_len)
+    doc_term_dict[k] = np.random.choice(K, val_len)
     # store the n_{d, topic}, n_{word, topic} and n_{topic}
     freq = Counter(doc_term_dict[k])
+    flg0 = -1 # record the first time we see topic 0
+    flg30 = -1 # topic 30
     for existent_topic in list(freq.keys()):
+        if existent_topic == 0:
+            flg0 = idx
+        if existent_topic == 30:
+            flg30 = idx
         #print(freq[existent_topic])
         ## update n_{d, topic}
         # (d, k)-th entry in n_{d, topic} = 
