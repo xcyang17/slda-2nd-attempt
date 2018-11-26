@@ -60,9 +60,21 @@ for idx in range(len(j_r)):
     # store the n_{d, topic}, n_{word, topic} and n_{topic}
     freq = Counter(doc_term_dict[k])
     for existent_topic in list(freq.keys()):
-#        print(freq[existent_topic])
+        #print(freq[existent_topic])
+        ## update n_{d, topic}
+        # (d, k)-th entry in n_{d, topic} = 
+        # number of times the k-th topic being assigned to terms in 
+        # the d-th document (including replicates)
         doc_topic_mat[int(news_id), existent_topic] += freq[existent_topic]
-    # update n_{word, topic}
+        ## update n_{word, topic}
+        # (w,k)-th entry in n_{word, topic} = 
+        # number of times the w-th term being assigned to the k-th topic
+        # acorss all D documents
+        term_topic_mat[j_r[idx], existent_topic] += freq[existent_topic]
+        ## update n_{topic}
+        # k-th entry in n_{topic} = number of times the k-th topic
+        # is being assigned to a term across all D documents
+        topic_mat[0,existent_topic] += freq[existent_topic]
     
     
 
