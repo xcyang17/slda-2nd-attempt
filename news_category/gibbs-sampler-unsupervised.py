@@ -75,14 +75,17 @@ for idx in range(len(j_r)):
         # k-th entry in n_{topic} = number of times the k-th topic
         # is being assigned to a term across all D documents
         topic_mat[0,existent_topic] += freq[existent_topic]
-    
-    
+
+# Gibbs sampler
+L = 5000 # number of iterations
+
+
+
 
 # number of docs = 124948 < max of news_id (124989)
-    
 
 stop = timeit.default_timer()    
-print('Time: ', stop - start) # 21 seconds
+print('Time: ', stop - start) # 40 seconds
 
 ## TODO: check correctness of the dictionary initialized above
 ## TODO: store the n_{d, topic}, n_{word, topic} and n_{topic}
