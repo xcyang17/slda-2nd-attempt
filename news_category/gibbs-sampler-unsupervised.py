@@ -57,23 +57,23 @@ for idx in range(len(j_r)):
     k = (news_id, term)
     val_len = v_r[idx]
     doc_term_dict[k] = np.random.choice(K, val_len)
-    # store the n_{d, topic}, n_{word, topic} and n_{topic}
+    # store the n_{doc, topic}, n_{term, topic} and n_{topic}
     freq = Counter(doc_term_dict[k])
-    flg0 = -1 # record the first time we see topic 0
-    flg30 = -1 # topic 30
+    #flg0 = -1 # record the first time we see topic 0
+    #flg30 = -1 # topic 30
     for existent_topic in list(freq.keys()):
-        if existent_topic == 0:
-            flg0 = idx
-        if existent_topic == 30:
-            flg30 = idx
+        #if existent_topic == 0:
+        #    flg0 = idx
+        #if existent_topic == 30:
+        #    flg30 = idx
         #print(freq[existent_topic])
-        ## update n_{d, topic}
-        # (d, k)-th entry in n_{d, topic} = 
+        ## update n_{doc, topic}
+        # (d, k)-th entry in n_{doc, topic} = 
         # number of times the k-th topic being assigned to terms in 
         # the d-th document (including replicates)
         doc_topic_mat[int(news_id), existent_topic] += freq[existent_topic]
-        ## update n_{word, topic}
-        # (w,k)-th entry in n_{word, topic} = 
+        ## update n_{term, topic}
+        # (w,k)-th entry in n_{term, topic} = 
         # number of times the w-th term being assigned to the k-th topic
         # acorss all D documents
         term_topic_mat[j_r[idx], existent_topic] += freq[existent_topic]
@@ -87,15 +87,19 @@ print('Time: ', stop - start) # 40.1200439069944
 
 # Gibbs sampler
 L = 5000 # number of iterations
+N = sum(v_r)
 
 
+
+
+
+for idx in range(N):
+    term = 
 
 
 # number of docs = 124948 < max of news_id (124989)
 
 
-## TODO: check correctness of the dictionary initialized above
-## TODO: store the n_{d, topic}, n_{word, topic} and n_{topic}
 
 x = Counter(doc_term_dict[('68129', 'animals')])
 
