@@ -108,29 +108,29 @@ phi_sample = np.zeros((D, K, L))
 start_1 = timeit.default_timer()
 for l in range(L):
     for d in range(D): # doc level
-    news_id = docs_txt_lines2[d]
-    tmp = j_array[np.where(i_array == news_id_dict[news_id])] # as `lst` in original pseudo code
-    Wd = list(itemgetter(*tmp.tolist())(terms_txt_lines2))
-    Nd = len(Wd)
-    for i in range(Nd): # term level
-        term = Wd[i]
-        term_id = term_id_dict[term]
-        Idi = len(doc_term_dict[(news_id, term)])
-        for j in range(Idi): # replicates of the term
-            k_hat = doc_term_dict[(news_id, term)][j]
-            doc_topic_mat[int(news_id), k_hat] -= 1 # C_{d, \hat{k}} -= 1
-            term_topic_mat[term_id, k_hat] -= 1 # C_{v, \hat{k}} -= 1
-            pks = []            
-            for k in range(K):
-                pks += [((doc_topic_mat[int(news_id), k] + 
-                        alpha[0,k])*(term_topic_mat[term_id, k]+beta[0,k]))/(topic_mat[0,k]+beta[0,k]*T)]
-            # then normalize
-            norm_cnst = sum(pks)
-            k_sampled = np.random.choice(K, 1, p = pks/norm_cnst)[0]
-            doc_topic_mat[int(news_id), k_sampled] += 1
-            term_topic_mat[term_id, k_sampled] += 1
-            #TODO: ???is topic_mat updated? or is n_{topic} not used in the sampling algo at all?
-            doc_term_dict[(news_id, term)][j] = k_sampled
+        news_id = docs_txt_lines2[d]
+        tmp = j_array[np.where(i_array == news_id_dict[news_id])] # as `lst` in original pseudo code
+        Wd = list(itemgetter(*tmp.tolist())(terms_txt_lines2))
+        Nd = len(Wd)
+        for i in range(Nd): # term level
+            term = Wd[i]
+            term_id = term_id_dict[term]
+            Idi = len(doc_term_dict[(news_id, term)])
+            for j in range(Idi): # replicates of the term
+                k_hat = doc_term_dict[(news_id, term)][j]
+                doc_topic_mat[int(news_id), k_hat] -= 1 # C_{d, \hat{k}} -= 1
+                term_topic_mat[term_id, k_hat] -= 1 # C_{v, \hat{k}} -= 1
+                pks = []            
+                for k in range(K):
+                    pks += [((doc_topic_mat[int(news_id), k] + 
+                            alpha[0,k])*(term_topic_mat[term_id, k]+beta[0,k]))/(topic_mat[0,k]+beta[0,k]*T)]
+                # then normalize
+                norm_cnst = sum(pks)
+                k_sampled = np.random.choice(K, 1, p = pks/norm_cnst)[0]
+                doc_topic_mat[int(news_id), k_sampled] += 1
+                term_topic_mat[term_id, k_sampled] += 1
+                #TODO: ???is topic_mat updated? or is n_{topic} not used in the sampling algo at all?
+                doc_term_dict[(news_id, term)][j] = k_sampled
     # update phi (see pg.73 of http://proceedings.mlr.press/v13/xiao10a/xiao10a.pdf)
     # this phi_{d,k} here looks like \theta_{d,z} in U Guleph tutorial
     for d1 in range(D):
