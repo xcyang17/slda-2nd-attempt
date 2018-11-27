@@ -9,6 +9,7 @@ from tables import *
 import numpy as np
 import timeit
 from collections import Counter
+from operator import itemgetter
 
 # load R output
 working_dir = "/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/news_category/R_output/"
@@ -16,16 +17,19 @@ i_txt = open(working_dir + "i.txt", "r")
 i_txt_lines = i_txt.readlines()
 i_txt_lines2 = [line.rstrip('\n') for line in i_txt_lines] # remove newlines '\n'
 i_r = list(map(int, i_txt_lines2)) # turn the list of strings into a list of ints
+i_array = np.asarray(i_r)
 
 j_txt = open(working_dir + "j.txt", "r")
 j_txt_lines = j_txt.readlines()
 j_txt_lines2 = [line.rstrip('\n') for line in j_txt_lines] # remove newlines '\n'
 j_r = list(map(int, j_txt_lines2))
+j_array = np.asarray(j_r)
 
 v_txt = open(working_dir + "v.txt", "r")
 v_txt_lines = v_txt.readlines()
 v_txt_lines2 = [line.rstrip('\n') for line in v_txt_lines] # remove newlines '\n'
 v_r = list(map(int, v_txt_lines2))
+v_array = np.asarray(v_r)
 
 terms_txt = open(working_dir + "terms.txt", "r")
 terms_txt_lines = terms_txt.readlines()
@@ -37,6 +41,7 @@ docs_txt_lines = docs_txt.readlines()
 docs_txt_lines2 = [line.rstrip('\n') for line in docs_txt_lines] # remove newlines '\n'
 # ^^^ keep news_id as character instead of number
 docs_r = list(map(int, docs_txt_lines2))
+docs_array = np.asarray(docs_r)
 
 r_output = [i_r, j_r, v_r, terms_txt_lines2, docs_r]
 
@@ -59,14 +64,7 @@ for idx in range(len(j_r)):
     doc_term_dict[k] = np.random.choice(K, val_len)
     # store the n_{doc, topic}, n_{term, topic} and n_{topic}
     freq = Counter(doc_term_dict[k])
-    #flg0 = -1 # record the first time we see topic 0
-    #flg30 = -1 # topic 30
     for existent_topic in list(freq.keys()):
-        #if existent_topic == 0:
-        #    flg0 = idx
-        #if existent_topic == 30:
-        #    flg30 = idx
-        #print(freq[existent_topic])
         ## update n_{doc, topic}
         # (d, k)-th entry in n_{doc, topic} = 
         # number of times the k-th topic being assigned to terms in 
@@ -81,30 +79,49 @@ for idx in range(len(j_r)):
         # k-th entry in n_{topic} = number of times the k-th topic
         # is being assigned to a term across all D documents
         topic_mat[0,existent_topic] += freq[existent_topic]
+
 stop = timeit.default_timer()    
 print('Time: ', stop - start) # 40.1200439069944
 
+# define dictionaries for term_id and news_id
+T = len(terms_txt_lines2)
+D = len(docs_r)
+term_id_dict = dict(zip(terms_txt_lines2, range(len(terms_txt_lines2))))
+news_id_dict = dict(zip(docs_txt_lines2, range(len(docs_txt_lines2))))
+alpha = np.ones((1, K))
+beta = np.ones((1, T))
+## TODO: np.where returns weird result
 
 # Gibbs sampler
 L = 5000 # number of iterations
-N = sum(v_r)
+
+
+for d in range(D):
+    news_id = docs_txt_lines2[d]
+    tmp = j_array[np.where(i_array == news_id_dict[news_id])] # as `lst` in original pseudo code
+    Wd = list(itemgetter(*tmp.tolist())(terms_txt_lines2))
+    Nd = len(Wd)
+    for i in range(Nd):
+        term = Wd[i]
+        term_id = term_id_dict[term]
+        Idi = len(doc_term_dict[(news_id, term)])
+        for j in range(Idi):
+            k_hat = doc_term_dict[(news_id, term)][j]
+            doc_topic_mat[int(news_id), k_hat]
 
 
 
 
+np.where(i_array == 0)
+j_array[np.where(i_array == 0)]
 
-for idx in range(N):
-    term = 
-
+itemgetter(*tmp.tolist())(terms_txt_lines2)
 
 # number of docs = 124948 < max of news_id (124989)
 
 
 
-x = Counter(doc_term_dict[('68129', 'animals')])
 
-
-'68129', 'animals'
 
 # Gibbs sampler
 L = 5000 # number of iterations
