@@ -10,6 +10,7 @@ import numpy as np
 import timeit
 from collections import Counter
 from operator import itemgetter
+import random
 
 # load R output
 working_dir = "/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/news_category/R_output/"
@@ -55,6 +56,8 @@ doc_topic_mat = np.zeros((len(docs_r), K))
 term_topic_mat = np.zeros((len(terms_txt_lines2), K))
 topic_mat = np.zeros((1, K))
 
+random.seed(9)
+
 start = timeit.default_timer()
 for idx in range(len(j_r)):
     news_id = docs_txt_lines2[i_r[idx]] # i_r[idx] as id for `doc`
@@ -81,7 +84,7 @@ for idx in range(len(j_r)):
         topic_mat[0,existent_topic] += freq[existent_topic]
 
 stop = timeit.default_timer()    
-print('Time: ', stop - start) # 40.1200439069944
+print('Time: ', stop - start) # 38.389838336006505
 
 # define dictionaries for term_id and news_id
 T = len(terms_txt_lines2)
@@ -94,8 +97,13 @@ beta = np.ones((1, T))
 
 # Gibbs sampler
 L = 5000 # number of iterations
+L = 5
+
+# store the estimated \theta_{term, topic} and \phi_{doc, topic}
+theta_sample = np.zeros((T, K ,L))
 
 
+start_1 = timeit.default_timer()
 for d in range(D):
     news_id = docs_txt_lines2[d]
     tmp = j_array[np.where(i_array == news_id_dict[news_id])] # as `lst` in original pseudo code
@@ -107,28 +115,36 @@ for d in range(D):
         Idi = len(doc_term_dict[(news_id, term)])
         for j in range(Idi):
             k_hat = doc_term_dict[(news_id, term)][j]
-            doc_topic_mat[int(news_id), k_hat]
+            doc_topic_mat[int(news_id), k_hat] -= 1 # C_{d, \hat{k}} -= 1
+            term_topic_mat[term_id, k_hat] -= 1 # C_{v, \hat{k}} -= 1
+            pks = []            
+            for k in range(K):
+                pks += [((doc_topic_mat[int(news_id), k] + 
+                        alpha[0,k])*(term_topic_mat[term_id, k]+beta[0,k]))/(topic_mat[0,k]+beta[0,k]*T)]
+            # then normalize
+            norm_cnst = sum(pks)
+            k_sampled = np.random.choice(K, 1, p = pks/norm_cnst)[0]
+            doc_topic_mat[int(news_id), k_sampled] += 1
+            term_topic_mat[term_id, k_sampled] += 1
+            doc_term_dict[(news_id, term)][j] = k_sampled
+
+stop_1 = timeit.default_timer()    
+print('Time: ', stop_1 - start_1)
+
+
+# understanding 3d array in numpy
+np.asarray(list(range(48))).reshape((6,4,2))
+
+
+
+rv = 0
+for idx in range(len(Wd)):
+    print(Wd[idx], len(doc_term_dict[('82341', Wd[idx])]))
+    rv += len(doc_term_dict[('82341', Wd[idx])])
 
 
 
 
-np.where(i_array == 0)
-j_array[np.where(i_array == 0)]
-
-itemgetter(*tmp.tolist())(terms_txt_lines2)
-
-# number of docs = 124948 < max of news_id (124989)
-
-
-
-
-
-# Gibbs sampler
-L = 5000 # number of iterations
-
-
-
-# need word count matrix
 
 
 
