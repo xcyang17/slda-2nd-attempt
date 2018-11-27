@@ -1,9 +1,11 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Sun Nov 25 20:14:31 2018
+Created on Tue Nov 27 12:44:04 2018
 
 @author: apple
 """
+
 # import packages
 from tables import *
 import numpy as np
@@ -150,50 +152,3 @@ for l in range(L):
         theta_sample[:,k1,l] = (term_topic_mat[:,k1] + b)/(sum_C_v_k + T*b)
 stop_1 = timeit.default_timer()    
 print('Time: ', stop_1 - start_1) # 316.25546823700006
-
-
-
-
-# trying to time the code
-start_1 = timeit.default_timer()
-for d in range(D): # doc level
-    if d%100 == 0:
-        print(d)
-    news_id = docs_txt_lines2[d]
-    tmp = j_array[np.where(i_array == news_id_dict[news_id])] # as `lst` in original pseudo code
-    if len(tmp) == 1: 
-        Wd = [itemgetter(*tmp.tolist())(terms_txt_lines2)]
-    else:
-        Wd = list(itemgetter(*tmp.tolist())(terms_txt_lines2))
-    Nd = len(Wd)
-    for i in range(Nd): # term level
-        term = Wd[i]
-        term_id = term_id_dict[term]
-        Idi = len(doc_term_dict[(news_id, term)])
-        for j in range(Idi): # replicates of the term
-            k_hat = doc_term_dict[(news_id, term)][j]
-            doc_topic_mat[int(news_id), k_hat] -= 1 # C_{d, \hat{k}} -= 1
-            term_topic_mat[term_id, k_hat] -= 1 # C_{v, \hat{k}} -= 1
-            pks = []            
-            for k in range(K):
-                pks += [((doc_topic_mat[int(news_id), k] + 
-                        alpha[0,k])*(term_topic_mat[term_id, k]+beta[0,k]))/(topic_mat[0,k]+beta[0,k]*T)]
-            # then normalize
-            norm_cnst = sum(pks)
-            k_sampled = np.random.choice(a = K, size = 1, p = pks/norm_cnst)[0]
-            doc_topic_mat[int(news_id), k_sampled] += 1
-            term_topic_mat[term_id, k_sampled] += 1
-            #TODO: ???is topic_mat updated? or is n_{topic} not used in the sampling algo at all?
-            #TODO: what if we sampled a k that is previously 
-            doc_term_dict[(news_id, term)][j] = k_sampled
-stop_1 = timeit.default_timer()    
-print('Time: ', stop_1 - start_1) # 309.10840425500004
-
-
-
-# TODO: write efficient unsupervised LDA using CGS algo
-
-
-
-
-

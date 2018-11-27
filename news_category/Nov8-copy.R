@@ -71,6 +71,13 @@ news_id_dtm$dimnames$Terms[news_id_dtm$j[news_id_dtm$i == 1556]]
 news_id_dtm$dimnames$Docs[1556]
 out[[as.numeric(news_id_dtm$dimnames$Docs[1556])]]
 
+# doc 120487+1 (6335 in i)
+news_id_dtm$j[news_id_dtm$i == 6335]
+news_id_dtm$dimnames$Terms[news_id_dtm$j[news_id_dtm$i == 6335]]
+news_id_dtm$dimnames$Docs[6335]
+out[[as.numeric(news_id_dtm$dimnames$Docs[120488])]]
+
+
 
 
 # modeling code continued
