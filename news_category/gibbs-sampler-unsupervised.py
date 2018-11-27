@@ -191,7 +191,12 @@ print('Time: ', stop_1 - start_1) # 309.10840425500004
 
 
 
-# TODO: write efficient unsupervised LDA using CGS algo
+
+
+
+
+
+
 
 
 
