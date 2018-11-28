@@ -56,6 +56,7 @@ for i in range(4):
 # initializing the \bar{Z} at random from a uniform multinomial from (1, ..., K = 31)
 K = 31 # number of topics
 doc_term_dict = dict()
+doc_term_dict_R31 = dict() # add this dictionary to store the R^{31} form representation of doc_term_dict
 doc_topic_mat = np.zeros((len(docs_r), K))
 term_topic_mat = np.zeros((len(terms_txt_lines2), K))
 topic_mat = np.zeros((1, K))
@@ -71,6 +72,11 @@ for idx in range(len(j_r)):
     doc_term_dict[k] = np.random.choice(K, val_len)
     # store the n_{doc, topic}, n_{term, topic} and n_{topic}
     freq = Counter(doc_term_dict[k])
+    tmp_dict=dict(freq)
+    tmp_array = np.array(list(tmp_dict.items()))
+    tmpp = np.zeros((1, K))
+    tmpp[0,tmp_array[:,0]] = tmp_array[:,1]
+    doc_term_dict_R31[k] = tmpp    
     for existent_topic in list(freq.keys()):
         ## update n_{doc, topic}
         # (d, k)-th entry in n_{doc, topic} = 
@@ -88,7 +94,7 @@ for idx in range(len(j_r)):
         topic_mat[0,existent_topic] += freq[existent_topic]
 
 stop = timeit.default_timer()    
-print('Time: ', stop - start) # 34 seconds
+print('Time: ', stop - start) # 51 seconds
 
 # define dictionaries for term_id and news_id
 T = len(terms_txt_lines2)
@@ -102,6 +108,8 @@ beta = np.ones((1, T))
 doc_topic_mat_orig = doc_topic_mat
 term_topic_mat_orig = term_topic_mat
 topic_mat_orig = topic_mat
+doc_term_dict_R31_orig = doc_term_dict_R31
+doc_term_dict_orig = doc_term_dict
 
 
 # Implementation of Figure 2 in http://proceedings.mlr.press/v13/xiao10a/xiao10a.pdf
@@ -119,7 +127,7 @@ for m in range(MCMC_iters):
     start_loop1 = timeit.default_timer()
     print(m)
     for d in range(D): # doc level
-        if d%1000 == 0:
+        if d%10000 == 0:
             print(d)
         news_id = docs_txt_lines2[d]
         tmp = j_array[np.where(i_array == news_id_dict[news_id])] # as `lst` in original pseudo code
@@ -131,20 +139,23 @@ for m in range(MCMC_iters):
         for i in range(Nd): # term level
             term = Wd[i]
             term_id = term_id_dict[term]
-            # below is line 3 in figure 2 
-            k_hat = doc_term_dict[(news_id, term)][0]
-            Ndi = len(doc_term_dict[(news_id, term)])
-            doc_topic_mat[int(news_id), k_hat] -= Ndi
-            term_topic_mat[term_id, k_hat] -= Ndi
+            # update these counting matrices
+            doc_topic_mat[int(news_id),:] = doc_topic_mat[int(news_id),:] - doc_term_dict_R31[(news_id, term)]
+            term_topic_mat[term_id, :] = term_topic_mat[term_id, :] - doc_term_dict_R31[(news_id, term)]
+            topic_mat[0,:] = topic_mat[0,:] - doc_term_dict_R31[(news_id, term)]
+            # compute the multinomial probability
             pks = []
             for k in range(K):
                 pks += [((doc_topic_mat[int(news_id), k] + 
                         alpha[0,k])*(term_topic_mat[term_id, k]+beta[0,k]))/(topic_mat[0,k]+beta[0,k]*T)]
             norm_cnst = sum(pks)
-            k_sampled = np.random.choice(a = K, size = 1, p = pks/norm_cnst)[0]
-            doc_topic_mat[int(news_id), k_sampled] += Ndi
-            term_topic_mat[term_id, k_sampled] += Ndi
-            doc_term_dict[(news_id, term)][0] = k_sampled
+            Ndi = len(doc_term_dict[(news_id, term)])
+            k_Ndi_samples = np.random.multinomial(Ndi, pks/norm_cnst, size = 1)
+            doc_term_dict_R31[(news_id, term)] = k_Ndi_samples
+            # update n_{doc, topic}, n_{term, topic} and n_{topic}
+            doc_topic_mat[int(news_id), :] = doc_topic_mat[int(news_id),:] + doc_term_dict_R31[(news_id, term)]
+            term_topic_mat[term_id, :] = term_topic_mat[term_id, :] + doc_term_dict_R31[(news_id, term)]
+            topic_mat[0,:] = topic_mat[0,:] + doc_term_dict_R31[(news_id, term)]
     stop_loop1 = timeit.default_timer()
     print(m, '-th loop, ', 'Time of d-loop: ', stop_loop1 - start_loop1)
     # update phi (see pg.73 of http://proceedings.mlr.press/v13/xiao10a/xiao10a.pdf)
