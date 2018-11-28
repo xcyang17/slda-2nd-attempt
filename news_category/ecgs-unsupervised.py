@@ -88,7 +88,7 @@ for idx in range(len(j_r)):
         topic_mat[0,existent_topic] += freq[existent_topic]
 
 stop = timeit.default_timer()    
-print('Time: ', stop - start) # 45 seconds
+print('Time: ', stop - start) # 34 seconds
 
 # define dictionaries for term_id and news_id
 T = len(terms_txt_lines2)
@@ -97,12 +97,18 @@ term_id_dict = dict(zip(terms_txt_lines2, range(len(terms_txt_lines2))))
 news_id_dict = dict(zip(docs_txt_lines2, range(len(docs_txt_lines2))))
 alpha = np.ones((1, K))
 beta = np.ones((1, T))
-## TODO: np.where returns weird result
 
+# save the original matrix
+doc_topic_mat_orig = doc_topic_mat
+term_topic_mat_orig = term_topic_mat
+topic_mat_orig = topic_mat
+
+
+# Implementation of Figure 2 in http://proceedings.mlr.press/v13/xiao10a/xiao10a.pdf
 # Gibbs sampler
 MCMC_iters = 3 # number of iterations
-a = 1 # entry in alpha
-b = 1 # entry in beta
+a = 0.1 # entry in alpha
+b = 0.1 # entry in beta
 
 # store the estimated \theta_{term, topic} and \phi_{doc, topic}
 theta_sample = np.zeros((T, K ,MCMC_iters))
@@ -112,61 +118,6 @@ start_1 = timeit.default_timer()
 for m in range(MCMC_iters):
     start_loop1 = timeit.default_timer()
     print(m)
-    for d in range(D): # doc level
-        #if d%1000 == 0:
-        #    print(d)
-        news_id = docs_txt_lines2[d]
-        tmp = j_array[np.where(i_array == news_id_dict[news_id])] # as `lst` in original pseudo code
-        if len(tmp) == 1: 
-            Wd = [itemgetter(*tmp.tolist())(terms_txt_lines2)]
-        else:
-            Wd = list(itemgetter(*tmp.tolist())(terms_txt_lines2))
-        Nd = len(Wd)
-        for i in range(Nd): # term level
-            term = Wd[i]
-            term_id = term_id_dict[term]
-            Idi = len(doc_term_dict[(news_id, term)])
-            for j in range(Idi): # replicates of the term
-                k_hat = doc_term_dict[(news_id, term)][j]
-                doc_topic_mat[int(news_id), k_hat] -= 1 # C_{d, \hat{k}} -= 1
-                term_topic_mat[term_id, k_hat] -= 1 # C_{v, \hat{k}} -= 1
-                pks = []            
-                for k in range(K):
-                    pks += [((doc_topic_mat[int(news_id), k] + 
-                            alpha[0,k])*(term_topic_mat[term_id, k]+beta[0,k]))/(topic_mat[0,k]+beta[0,k]*T)]
-                # then normalize
-                norm_cnst = sum(pks)
-                k_sampled = np.random.choice(a = K, size = 1, p = pks/norm_cnst)[0]
-                doc_topic_mat[int(news_id), k_sampled] += 1
-                term_topic_mat[term_id, k_sampled] += 1
-                #TODO: ???is topic_mat updated? or is n_{topic} not used in the sampling algo at all?
-                #TODO: what if we sampled a k that is previously 
-                doc_term_dict[(news_id, term)][j] = k_sampled
-    stop_loop1 = timeit.default_timer()
-    print(m, '-th loop, ', 'Time of d-loop: ', stop_loop1 - start_loop1)
-    # update phi (see pg.73 of http://proceedings.mlr.press/v13/xiao10a/xiao10a.pdf)
-    # this phi_{d,k} here looks like \theta_{d,z} in U Guleph tutorial
-    start_loop2 = timeit.default_timer()
-    for d1 in range(D):
-        news_id1 = docs_txt_lines2[d1]
-        sum_C_d_k = sum(doc_topic_mat[int(news_id1),:])
-        phi_sample[int(news_id1),:,m] = (doc_topic_mat[int(news_id1),:] + a)/(sum_C_d_k + K*a)
-    stop_loop2 = timeit.default_timer()
-    print(m, '-th loop, ', 'Time of d1-loop: ', stop_loop2 - start_loop2)
-    # update theta (see pg.73 of http://proceedings.mlr.press/v13/xiao10a/xiao10a.pdf)
-    # this theta_{v,k} here looks like \phi_{w,z} (= \phi_{z,w}) in U Guleph tutorial
-    start_loop3 = timeit.default_timer()
-    for k1 in range(K):
-        sum_C_v_k = sum(term_topic_mat[:,k1])
-        theta_sample[:,k1,m] = (term_topic_mat[:,k1] + b)/(sum_C_v_k + T*b)
-    stop_loop3 = timeit.default_timer()
-    print(m, '-th loop, ', 'Time of k1-loop: ', stop_loop3 - start_loop3)
-stop_1 = timeit.default_timer()    
-print('Time: ', stop_1 - start_1) # 316.25546823700006
-
-
-# TODO: write efficient unsupervised LDA using CGS algo
-for m in range(MCMC_iters):
     for d in range(D): # doc level
         if d%1000 == 0:
             print(d)
@@ -179,40 +130,44 @@ for m in range(MCMC_iters):
         Nd = len(Wd)
         for i in range(Nd): # term level
             term = Wd[i]
+            term_id = term_id_dict[term]
             # below is line 3 in figure 2 
             k_hat = doc_term_dict[(news_id, term)][0]
-            
-            
-            
-            term_id = term_id_dict[term]
-            Idi = len(doc_term_dict[(news_id, term)])
-            for j in range(Idi): # replicates of the term
-                k_hat = doc_term_dict[(news_id, term)][j]
-                doc_topic_mat[int(news_id), k_hat] -= 1 # C_{d, \hat{k}} -= 1
-                term_topic_mat[term_id, k_hat] -= 1 # C_{v, \hat{k}} -= 1
-                pks = []            
-                for k in range(K):
-                    pks += [((doc_topic_mat[int(news_id), k] + 
-                            alpha[0,k])*(term_topic_mat[term_id, k]+beta[0,k]))/(topic_mat[0,k]+beta[0,k]*T)]
-                # then normalize
-                norm_cnst = sum(pks)
-                k_sampled = np.random.choice(a = K, size = 1, p = pks/norm_cnst)[0]
-                doc_topic_mat[int(news_id), k_sampled] += 1
-                term_topic_mat[term_id, k_sampled] += 1
-                #TODO: ???is topic_mat updated? or is n_{topic} not used in the sampling algo at all?
-                #TODO: what if we sampled a k that is previously 
-                doc_term_dict[(news_id, term)][j] = k_sampled
+            Ndi = len(doc_term_dict[(news_id, term)])
+            doc_topic_mat[int(news_id), k_hat] -= Ndi
+            term_topic_mat[term_id, k_hat] -= Ndi
+            pks = []
+            for k in range(K):
+                pks += [((doc_topic_mat[int(news_id), k] + 
+                        alpha[0,k])*(term_topic_mat[term_id, k]+beta[0,k]))/(topic_mat[0,k]+beta[0,k]*T)]
+            norm_cnst = sum(pks)
+            k_sampled = np.random.choice(a = K, size = 1, p = pks/norm_cnst)[0]
+            doc_topic_mat[int(news_id), k_sampled] += Ndi
+            term_topic_mat[term_id, k_sampled] += Ndi
+            doc_term_dict[(news_id, term)][0] = k_sampled
+    stop_loop1 = timeit.default_timer()
+    print(m, '-th loop, ', 'Time of d-loop: ', stop_loop1 - start_loop1)
     # update phi (see pg.73 of http://proceedings.mlr.press/v13/xiao10a/xiao10a.pdf)
     # this phi_{d,k} here looks like \theta_{d,z} in U Guleph tutorial
+    start_loop2 = timeit.default_timer()
     for d1 in range(D):
         news_id1 = docs_txt_lines2[d1]
         sum_C_d_k = sum(doc_topic_mat[int(news_id1),:])
-        phi_sample[int(news_id1),:,m] = (doc_topic_mat[int(news_id1),:] + a)/(sum_C_d_k + K*a)        
+        phi_sample[int(news_id1),:,m] = (doc_topic_mat[int(news_id1),:] + a)/(sum_C_d_k + K*a)  
+    stop_loop2 = timeit.default_timer()
+    print(m, '-th loop, ', 'Time of d1-loop: ', stop_loop2 - start_loop2)
     # update theta (see pg.73 of http://proceedings.mlr.press/v13/xiao10a/xiao10a.pdf)
     # this theta_{v,k} here looks like \phi_{w,z} (= \phi_{z,w}) in U Guleph tutorial
+    start_loop3 = timeit.default_timer()
     for k1 in range(K):
         sum_C_v_k = sum(term_topic_mat[:,k1])
         theta_sample[:,k1,m] = (term_topic_mat[:,k1] + b)/(sum_C_v_k + T*b)
+    stop_loop3 = timeit.default_timer()
+    print(m, '-th loop, ', 'Time of k1-loop: ', stop_loop3 - start_loop3)
+stop_1 = timeit.default_timer()    
+print('Time: ', stop_1 - start_1)
+
+
 
 
 

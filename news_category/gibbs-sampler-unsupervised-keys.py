@@ -122,7 +122,7 @@ for l in range(L): # doc level
         k_hat = doc_term_dict[(news_id, term)][j]
         doc_topic_mat[int(news_id), k_hat] -= 1 # C_{d, \hat{k}} -= 1
         term_topic_mat[term_id, k_hat] -= 1 # C_{v, \hat{k}} -= 1
-        pks = []            
+        pks = []
         for k in range(K):
             pks += [((doc_topic_mat[int(news_id), k] + 
                     alpha[0,k])*(term_topic_mat[term_id, k]+beta[0,k]))/(topic_mat[0,k]+beta[0,k]*T)]
@@ -145,5 +145,8 @@ for k1 in range(K):
     theta_sample[:,k1,0] = (term_topic_mat[:,k1] + b)/(sum_C_v_k + T*b)
 stop_3 = timeit.default_timer()    
 print('Time: ', stop_3 - start_3) # 199.98975172999997
+
+
+
 
 

@@ -83,6 +83,7 @@ out[[as.numeric(news_id_dtm$dimnames$Docs[120488])]]
 # modeling code continued
 news_id_lda<-LDA(news_id_dtm,k=31,method="Gibbs",control = list(seed=1234))
 news_id_lda
+str(news_id_lda) # 2000 iterations
 
 news_topics <- tidy(news_id_lda,matrix="beta")
 
