@@ -9,7 +9,6 @@ Created on Tue Nov 27 12:44:04 2018
 # TODO: write efficient CGS as in figure 3 of http://proceedings.mlr.press/v13/xiao10a/xiao10a.pdf
 
 # import packages
-from tables import *
 import numpy as np
 import timeit
 from collections import Counter
@@ -50,8 +49,8 @@ docs_array = np.asarray(docs_r)
 
 r_output = [i_r, j_r, v_r, terms_txt_lines2, docs_r]
 
-for i in range(4):
-    print(r_output[i][0:10])
+#for i in range(4):
+#    print(r_output[i][0:10])
 
 # initializing the \bar{Z} at random from a uniform multinomial from (1, ..., K = 31)
 K = 31 # number of topics
