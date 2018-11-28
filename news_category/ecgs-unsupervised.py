@@ -100,19 +100,18 @@ beta = np.ones((1, T))
 ## TODO: np.where returns weird result
 
 # Gibbs sampler
-#L = 5000 # number of iterations
-L = 3
+MCMC_iters = 3 # number of iterations
 a = 1 # entry in alpha
 b = 1 # entry in beta
 
 # store the estimated \theta_{term, topic} and \phi_{doc, topic}
-theta_sample = np.zeros((T, K ,L))
-phi_sample = np.zeros((D, K, L))
+theta_sample = np.zeros((T, K ,MCMC_iters))
+phi_sample = np.zeros((D, K, MCMC_iters))
 
 start_1 = timeit.default_timer()
-for l in range(L):
+for m in range(MCMC_iters):
     start_loop1 = timeit.default_timer()
-    print(l)
+    print(m)
     for d in range(D): # doc level
         #if d%1000 == 0:
         #    print(d)
@@ -144,30 +143,30 @@ for l in range(L):
                 #TODO: what if we sampled a k that is previously 
                 doc_term_dict[(news_id, term)][j] = k_sampled
     stop_loop1 = timeit.default_timer()
-    print(l, '-th loop, ', 'Time of d-loop: ', stop_loop1 - start_loop1)
+    print(m, '-th loop, ', 'Time of d-loop: ', stop_loop1 - start_loop1)
     # update phi (see pg.73 of http://proceedings.mlr.press/v13/xiao10a/xiao10a.pdf)
     # this phi_{d,k} here looks like \theta_{d,z} in U Guleph tutorial
     start_loop2 = timeit.default_timer()
     for d1 in range(D):
         news_id1 = docs_txt_lines2[d1]
         sum_C_d_k = sum(doc_topic_mat[int(news_id1),:])
-        phi_sample[int(news_id1),:,l] = (doc_topic_mat[int(news_id1),:] + a)/(sum_C_d_k + K*a)
+        phi_sample[int(news_id1),:,m] = (doc_topic_mat[int(news_id1),:] + a)/(sum_C_d_k + K*a)
     stop_loop2 = timeit.default_timer()
-    print(l, '-th loop, ', 'Time of d1-loop: ', stop_loop2 - start_loop2)
+    print(m, '-th loop, ', 'Time of d1-loop: ', stop_loop2 - start_loop2)
     # update theta (see pg.73 of http://proceedings.mlr.press/v13/xiao10a/xiao10a.pdf)
     # this theta_{v,k} here looks like \phi_{w,z} (= \phi_{z,w}) in U Guleph tutorial
     start_loop3 = timeit.default_timer()
     for k1 in range(K):
         sum_C_v_k = sum(term_topic_mat[:,k1])
-        theta_sample[:,k1,l] = (term_topic_mat[:,k1] + b)/(sum_C_v_k + T*b)
+        theta_sample[:,k1,m] = (term_topic_mat[:,k1] + b)/(sum_C_v_k + T*b)
     stop_loop3 = timeit.default_timer()
-    print(l, '-th loop, ', 'Time of k1-loop: ', stop_loop3 - start_loop3)
+    print(m, '-th loop, ', 'Time of k1-loop: ', stop_loop3 - start_loop3)
 stop_1 = timeit.default_timer()    
 print('Time: ', stop_1 - start_1) # 316.25546823700006
 
 
 # TODO: write efficient unsupervised LDA using CGS algo
-for l in range(L):
+for m in range(MCMC_iters):
     for d in range(D): # doc level
         if d%1000 == 0:
             print(d)
@@ -208,12 +207,12 @@ for l in range(L):
     for d1 in range(D):
         news_id1 = docs_txt_lines2[d1]
         sum_C_d_k = sum(doc_topic_mat[int(news_id1),:])
-        phi_sample[int(news_id1),:,l] = (doc_topic_mat[int(news_id1),:] + a)/(sum_C_d_k + K*a)        
+        phi_sample[int(news_id1),:,m] = (doc_topic_mat[int(news_id1),:] + a)/(sum_C_d_k + K*a)        
     # update theta (see pg.73 of http://proceedings.mlr.press/v13/xiao10a/xiao10a.pdf)
     # this theta_{v,k} here looks like \phi_{w,z} (= \phi_{z,w}) in U Guleph tutorial
     for k1 in range(K):
         sum_C_v_k = sum(term_topic_mat[:,k1])
-        theta_sample[:,k1,l] = (term_topic_mat[:,k1] + b)/(sum_C_v_k + T*b)
+        theta_sample[:,k1,m] = (term_topic_mat[:,k1] + b)/(sum_C_v_k + T*b)
 
 
 

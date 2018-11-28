@@ -93,7 +93,7 @@ term_id_dict = dict(zip(terms_txt_lines2, range(len(terms_txt_lines2))))
 news_id_dict = dict(zip(docs_txt_lines2, range(len(docs_txt_lines2))))
 alpha = np.ones((1, K))
 beta = np.ones((1, T))
-## TODO: np.where returns weird result
+
 
 # Gibbs sampler
 #L = 5000 # number of iterations
