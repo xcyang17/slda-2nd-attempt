@@ -54,11 +54,11 @@ str(news_id_dtm)
 # minus 1 for zero indexing in python
 options(scipen = 999)
 setwd("/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/news_category/R_output")
-write.table(news_id_dtm$i-1,file="i.txt", row.names = F, col.names = F)
-write.table(news_id_dtm$j-1,file="j.txt", row.names = F, col.names = F)
-write.table(news_id_dtm$v,file="v.txt", row.names = F, col.names = F)
-write.table((as.numeric(news_id_dtm$dimnames$Docs)-1),file="Docs.txt", row.names = F, col.names = F)
-write.table(news_id_dtm$dimnames$Terms,file="Terms.txt", row.names = F, col.names = F)
+write.table(news_id_dtm$i-1,file="i-2.txt", row.names = F, col.names = F)
+write.table(news_id_dtm$j-1,file="j-2.txt", row.names = F, col.names = F)
+write.table(news_id_dtm$v,file="v-2.txt", row.names = F, col.names = F)
+write.table((as.numeric(news_id_dtm$dimnames$Docs)-1),file="Docs-2.txt", row.names = F, col.names = F)
+write.table(news_id_dtm$dimnames$Terms,file="Terms-2.txt", row.names = F, col.names = F)
 
 # examine whether my python code works
 (news_id_dtm$i-1)[1]+1

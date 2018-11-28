@@ -15,6 +15,7 @@ import random
 
 # load R output
 working_dir = "/Users/CuiCan/Desktop/Slides/NCState/ST 740/Final Project/ST740-FA18-Final/news_category/R_output/"
+#working_dir = "/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/news_category/R_output/"
 i_txt = open(working_dir + "i.txt", "r")
 i_txt_lines = i_txt.readlines()
 i_txt_lines2 = [line.rstrip('\n') for line in i_txt_lines] # remove newlines '\n'
@@ -33,12 +34,12 @@ v_txt_lines2 = [line.rstrip('\n') for line in v_txt_lines] # remove newlines '\n
 v_r = list(map(int, v_txt_lines2))
 v_array = np.asarray(v_r)
 
-terms_txt = open(working_dir + "terms.txt", "r")
+terms_txt = open(working_dir + "Terms.txt", "r")
 terms_txt_lines = terms_txt.readlines()
 terms_txt_lines2 = [line.rstrip('\n') for line in terms_txt_lines] # remove newlines '\n'
 terms_txt_lines2 = [line.replace('"', '') for line in terms_txt_lines2] # remove double quotes
 
-docs_txt = open(working_dir + "docs.txt", "r")
+docs_txt = open(working_dir + "Docs.txt", "r")
 docs_txt_lines = docs_txt.readlines()
 docs_txt_lines2 = [line.rstrip('\n') for line in docs_txt_lines] # remove newlines '\n'
 # ^^^ keep news_id as character instead of number
@@ -47,8 +48,8 @@ docs_array = np.asarray(docs_r)
 
 r_output = [i_r, j_r, v_r, terms_txt_lines2, docs_r]
 
-for i in range(4):
-    print(r_output[i][0:10])
+#for i in range(4):
+#    print(r_output[i][0:10])
 
 # initializing the \bar{Z} at random from a uniform multinomial from (1, ..., K = 31)
 K = 31 # number of topics
