@@ -16,34 +16,34 @@ from operator import itemgetter
 import random
 
 # load R output
-working_dir = "/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/news_category/R_output/"
-i_txt = open(working_dir + "i-2.txt", "r")
-#i_txt = open("i-2.txt", "r")
+#working_dir = "/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/news_category/R_output/"
+#i_txt = open(working_dir + "i-2.txt", "r")
+i_txt = open("i.txt", "r")
 i_txt_lines = i_txt.readlines()
 i_txt_lines2 = [line.rstrip('\n') for line in i_txt_lines] # remove newlines '\n'
 i_r = list(map(int, i_txt_lines2)) # turn the list of strings into a list of ints
 i_array = np.asarray(i_r)
 
-j_txt = open(working_dir + "j-2.txt", "r")
-#j_txt = open("j-2.txt", "r")
+#j_txt = open(working_dir + "j-2.txt", "r")
+j_txt = open("j.txt", "r")
 j_txt_lines = j_txt.readlines()
 j_txt_lines2 = [line.rstrip('\n') for line in j_txt_lines] # remove newlines '\n'
 j_r = list(map(int, j_txt_lines2))
 j_array = np.asarray(j_r)
 
-v_txt = open(working_dir + "v-2.txt", "r")
-#v_txt = open("v-2.txt", "r")
+#v_txt = open(working_dir + "v-2.txt", "r")
+v_txt = open("v.txt", "r")
 v_txt_lines = v_txt.readlines()
 v_txt_lines2 = [line.rstrip('\n') for line in v_txt_lines] # remove newlines '\n'
 v_r = list(map(int, v_txt_lines2))
 v_array = np.asarray(v_r)
 
-terms_txt = open(working_dir + "Terms-2.txt", "r")
+terms_txt = open("Terms.txt", "r")
 terms_txt_lines = terms_txt.readlines()
 terms_txt_lines2 = [line.rstrip('\n') for line in terms_txt_lines] # remove newlines '\n'
 terms_txt_lines2 = [line.replace('"', '') for line in terms_txt_lines2] # remove double quotes
 
-docs_txt = open(working_dir + "Docs-2.txt", "r")
+docs_txt = open("Docs.txt", "r")
 docs_txt_lines = docs_txt.readlines()
 docs_txt_lines2 = [line.rstrip('\n') for line in docs_txt_lines] # remove newlines '\n'
 # ^^^ keep news_id as character instead of number
