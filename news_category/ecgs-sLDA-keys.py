@@ -128,11 +128,11 @@ doc_term_dict_R31_orig = doc_term_dict_R31
 doc_term_dict_orig = doc_term_dict
 
 
-#doc_topic_mat = doc_topic_mat_orig
-#term_topic_mat = term_topic_mat_orig
-#topic_mat = topic_mat_orig
-#doc_term_dict_R31 = doc_term_dict_R31_orig
-#doc_term_dict = doc_term_dict_orig
+doc_topic_mat = doc_topic_mat_orig
+term_topic_mat = term_topic_mat_orig
+topic_mat = topic_mat_orig
+doc_term_dict_R31 = doc_term_dict_R31_orig
+doc_term_dict = doc_term_dict_orig
 
 # Define function to update eta
 def eta_gradient(k,n_sample=10,s=1111):

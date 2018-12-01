@@ -14,33 +14,38 @@ import timeit
 from collections import Counter
 from operator import itemgetter
 import random
+import matplotlib.pyplot as plt
+
 
 # load R output
-working_dir = "/Users/CuiCan/Desktop/Slides/NCState/ST 740/Final Project New/ST740-FA18-Final/news_category/R_output/"
-i_txt = open(working_dir + "i.txt", "r")
+#working_dir = "/Users/CuiCan/Desktop/Slides/NCState/ST 740/Final Project New/ST740-FA18-Final/news_category/R_output_3"
+working_dir = "/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/news_category/R_output_5/"
+#ver = ""
+ver = "-5"
+i_txt = open(working_dir + "i" + ver +  ".txt", "r")
 i_txt_lines = i_txt.readlines()
 i_txt_lines2 = [line.rstrip('\n') for line in i_txt_lines] # remove newlines '\n'
 i_r = list(map(int, i_txt_lines2)) # turn the list of strings into a list of ints
 i_array = np.asarray(i_r)
 
-j_txt = open(working_dir + "j.txt", "r")
+j_txt = open(working_dir + "j" + ver + ".txt", "r")
 j_txt_lines = j_txt.readlines()
 j_txt_lines2 = [line.rstrip('\n') for line in j_txt_lines] # remove newlines '\n'
 j_r = list(map(int, j_txt_lines2))
 j_array = np.asarray(j_r)
 
-v_txt = open(working_dir + "v.txt", "r")
+v_txt = open(working_dir + "v" + ver + ".txt", "r")
 v_txt_lines = v_txt.readlines()
 v_txt_lines2 = [line.rstrip('\n') for line in v_txt_lines] # remove newlines '\n'
 v_r = list(map(int, v_txt_lines2))
 v_array = np.asarray(v_r)
 
-terms_txt = open(working_dir + "terms.txt", "r")
+terms_txt = open(working_dir + "Terms" + ver + ".txt", "r")
 terms_txt_lines = terms_txt.readlines()
 terms_txt_lines2 = [line.rstrip('\n') for line in terms_txt_lines] # remove newlines '\n'
 terms_txt_lines2 = [line.replace('"', '') for line in terms_txt_lines2] # remove double quotes
 
-docs_txt = open(working_dir + "docs.txt", "r")
+docs_txt = open(working_dir + "Docs" + ver + ".txt", "r")
 docs_txt_lines = docs_txt.readlines()
 docs_txt_lines2 = [line.rstrip('\n') for line in docs_txt_lines] # remove newlines '\n'
 # ^^^ keep news_id as character instead of number
@@ -53,7 +58,7 @@ r_output = [i_r, j_r, v_r, terms_txt_lines2, docs_r]
 #    print(r_output[i][0:10])
 
 # initializing the \bar{Z} at random from a uniform multinomial from (1, ..., K = 31)
-K = 31 # number of topics
+K = 2 # number of topics
 doc_term_dict = dict()
 doc_term_dict_R31 = dict() # add this dictionary to store the R^{31} form representation of doc_term_dict
 doc_topic_mat = np.zeros((len(docs_r), K))
@@ -104,16 +109,16 @@ alpha = np.ones((1, K))
 beta = np.ones((1, T))
 
 # save the original matrix
-doc_topic_mat_orig = doc_topic_mat
-term_topic_mat_orig = term_topic_mat
-topic_mat_orig = topic_mat
-doc_term_dict_R31_orig = doc_term_dict_R31
-doc_term_dict_orig = doc_term_dict
+doc_topic_mat_orig = np.copy(doc_topic_mat)
+term_topic_mat_orig = np.copy(term_topic_mat)
+topic_mat_orig = np.copy(topic_mat)
+doc_term_dict_R31_orig = doc_term_dict_R31.copy()
+doc_term_dict_orig = doc_term_dict.copy()
 
 
 # Implementation of Figure 2 in http://proceedings.mlr.press/v13/xiao10a/xiao10a.pdf
 # Gibbs sampler
-MCMC_iters = 1 # number of iterations
+MCMC_iters = 500 # number of iterations
 a = 0.1 # entry in alpha
 b = 0.1 # entry in beta
 eta = np.zeros([K,K]) + 1/K #inital eta
@@ -127,14 +132,15 @@ for m in range(MCMC_iters):
     start_loop1 = timeit.default_timer()
     print(m)
     for (key,value) in doc_term_dict.items():
+        #print((key,value))
         count += 1
         news_id=key[0]
         term=key[1]
         term_id=term_id_dict[term]
         Ndi=len(value)
-        if (sum(doc_topic_mat[int(news_id),:])==0):
-            print([news_id, term,count])
-            break
+        #if (sum(doc_topic_mat[int(news_id),:])==0):
+        #    print([news_id, term, count])
+        #    break
         zbar_f = doc_topic_mat[int(news_id),:]/sum(doc_topic_mat[int(news_id),:])
         doc_topic_mat[int(news_id),:] = doc_topic_mat[int(news_id),:] - doc_term_dict_R31[(news_id, term)]
         term_topic_mat[term_id, :] = term_topic_mat[term_id, :] - doc_term_dict_R31[(news_id, term)]
@@ -184,14 +190,39 @@ for m in range(MCMC_iters):
 stop_1 = timeit.default_timer()    
 print('Time: ', stop_1 - start_1)
 
-np.save("theta-local.npy", theta_sample)
-np.save("phi-local.npy", phi_sample)
+
+save_dir = "/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/news_category/local_output_2_topic_run_1/"
+np.save(save_dir + "theta-local-2-topic-500.npy", theta_sample)
+np.save(save_dir + "phi-local-2-topic-500.npy", phi_sample)
+
+burn_in = 200
+axes = plt.gca()
+axes.set_ylim([min(theta_sample[0,0,burn_in:]),max(theta_sample[0,0,burn_in:])])
+plt.plot(np.linspace(0, MCMC_iters, MCMC_iters+1), theta_sample[0,0,burn_in:]);
+
+# find out the terms corresponding to the largest value in theta_sample[:,0,burn_in:] 
+# and theta_sample[:,1,burn_in:], respectively
+top_num = 10
+topic_0_theta = theta_sample[:,0,burn_in:]
+topic_0_theta_col_mean = np.mean(topic_0_theta, axis=1)
+frequent_term_id_topic_0 = topic_0_theta_col_mean.argsort()[-top_num:][::-1]
+list(terms_txt_lines2[i] for i in frequent_term_id_topic_0.tolist())
 
 
-topic_mat[0,0]
-doc_term_dict_R31[('82341','cake')]
+# now examine topic_1
+topic_1_theta = theta_sample[:,1,burn_in:]
+topic_1_theta_col_mean = np.mean(topic_1_theta, axis=1)
+frequent_term_id_topic_1 = topic_1_theta_col_mean.argsort()[-top_num:][::-1]
+list(terms_txt_lines2[i] for i in frequent_term_id_topic_1.tolist())
 
-# Debug
-doc_term_dict_R31_orig[('86512', 'love')]
-doc_topic_mat_orig[86512,]
+
+
+
+
+
+
+
+
+
+
 

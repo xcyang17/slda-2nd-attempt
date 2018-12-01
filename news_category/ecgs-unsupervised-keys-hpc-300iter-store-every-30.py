@@ -118,12 +118,13 @@ doc_term_dict_R31_orig = doc_term_dict_R31
 # Implementation of Figure 2 in http://proceedings.mlr.press/v13/xiao10a/xiao10a.pdf
 # Gibbs sampler
 MCMC_iters = 300 # number of iterations
+s = 30
 a = 0.1 # entry in alpha
 b = 0.1 # entry in beta
 
 # store the estimated \theta_{term, topic} and \phi_{doc, topic}
-theta_sample = np.zeros((T, K ,MCMC_iters))
-phi_sample = np.zeros((D, K, MCMC_iters))
+theta_sample = np.zeros((T, K ,s))
+phi_sample = np.zeros((D, K, s))
 
 #start_1 = timeit.default_timer()
 for m in range(MCMC_iters):
@@ -168,10 +169,12 @@ for m in range(MCMC_iters):
         sum_C_v_k = sum(term_topic_mat[:,k1])
         theta_sample[:,k1,m] = (term_topic_mat[:,k1] + b)/(sum_C_v_k + T*b)
     if (m+1)%30 == 0:
-        start_idx = m-29
-        end_idx = m
-        np.save("theta-300-"+str((m-29))+"-"+str(m)+".npy", theta_sample[:,:,start_idx:end_idx])
-        np.save("phi-300-"+str((m-29))+"-"+str(m)+".npy", phi_sample[:,:,start_idx:end_idx])
+#        start_idx = m-29
+#        end_idx = m
+        np.save("theta-300-"+str((m-29))+"-"+str(m)+".npy", theta_sample)
+        np.save("phi-300-"+str((m-29))+"-"+str(m)+".npy", phi_sample)
+        theta_sample = np.zeros((T, K ,s))
+        phi_sample = np.zeros((D, K, s))
     #stop_loop3 = timeit.default_timer()
     #print(m, '-th loop, ', 'Time of k1-loop: ', stop_loop3 - start_loop3)
 #stop_1 = timeit.default_timer()    

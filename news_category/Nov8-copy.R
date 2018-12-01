@@ -46,6 +46,18 @@ by_news_word <- news_data %>% unnest_tokens(word,text)
 
 words_count <- by_news_word %>% anti_join(stop_words) %>% count(news_id,word,sort=TRUE)%>%ungroup()
 
+
+
+
+
+
+
+
+
+
+
+
+
 news_id_dtm<- words_count %>% cast_dtm(news_id,word,n)
 news_id_dtm
 str(news_id_dtm)
