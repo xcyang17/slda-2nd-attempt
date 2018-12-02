@@ -16,7 +16,7 @@ from operator import itemgetter
 import random
 
 # load R output
-working_dir = "/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/news_category/R_output/"
+working_dir = "/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/unsupervised-2-topics/R_output/CRIME_EDUCATION/"
 i_txt = open(working_dir + "i.txt", "r")
 i_txt_lines = i_txt.readlines()
 i_txt_lines2 = [line.rstrip('\n') for line in i_txt_lines] # remove newlines '\n'
@@ -53,7 +53,7 @@ r_output = [i_r, j_r, v_r, terms_txt_lines2, docs_r]
 #    print(r_output[i][0:10])
 
 # initializing the \bar{Z} at random from a uniform multinomial from (1, ..., K = 31)
-K = 31 # number of topics
+K = 2 # number of topics
 doc_term_dict = dict()
 doc_term_dict_R31 = dict() # add this dictionary to store the R^{31} form representation of doc_term_dict
 doc_topic_mat = np.zeros((len(docs_r), K))
@@ -100,8 +100,6 @@ T = len(terms_txt_lines2)
 D = len(docs_r)
 term_id_dict = dict(zip(terms_txt_lines2, range(len(terms_txt_lines2))))
 news_id_dict = dict(zip(docs_txt_lines2, range(len(docs_txt_lines2))))
-alpha = np.ones((1, K))
-beta = np.ones((1, T))
 
 # save the original matrix
 doc_topic_mat_orig = doc_topic_mat
@@ -113,7 +111,7 @@ doc_term_dict_orig = doc_term_dict
 
 # Implementation of Figure 2 in http://proceedings.mlr.press/v13/xiao10a/xiao10a.pdf
 # Gibbs sampler
-MCMC_iters = 3 # number of iterations
+MCMC_iters = 500 # number of iterations
 a = 0.1 # entry in alpha
 b = 0.1 # entry in beta
 
@@ -146,7 +144,7 @@ for m in range(MCMC_iters):
             pks = []
             for k in range(K):
                 pks += [((doc_topic_mat[int(news_id), k] + 
-                        alpha[0,k])*(term_topic_mat[term_id, k]+beta[0,k]))/(topic_mat[0,k]+beta[0,k]*T)]
+                        a)*(term_topic_mat[term_id, k]+b))/(topic_mat[0,k]+b*T)]
             norm_cnst = sum(pks)
             Ndi = len(doc_term_dict[(news_id, term)])
             k_Ndi_samples = np.random.multinomial(Ndi, pks/norm_cnst, size = 1)
@@ -177,8 +175,10 @@ for m in range(MCMC_iters):
 stop_1 = timeit.default_timer()    
 print('Time: ', stop_1 - start_1)
 
-
-
+# store the files
+save_dir = "/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/unsupervised-2-topics/"
+np.save(save_dir+"theta-unsupervised-crime-education.npy", theta_sample)
+np.save(save_dir+"phi-unsupervised-crime-education.npy", phi_sample)
 
 
 
