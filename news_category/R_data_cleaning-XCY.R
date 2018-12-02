@@ -6,6 +6,7 @@ library("broom")
 library("dplyr")
 library("tidyr")
 library("tidytext")
+library(stringr)
 setwd("/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/news_category")
 out <- lapply(readLines("News_Category_Dataset.json"), fromJSON)
 missing_id = c(102405, 77834, 105740, 93455, 90134, 97302, 88856, 95001, 118557, 
@@ -75,13 +76,6 @@ category1=category[which_news_id_keep]#72968 length
 news_id_dtm1 <- words_count1 %>% cast_dtm(news_id,word,n)
 news_id_dtm1
 
-# now try replacing plural of nouns with singular in `out`
-unique.terms = (news_id_dtm1$dimnames$Terms)
-
-grep(unique.terms, pattern = "ing$", ignore.case = T, value = T)
-
-
-
 
 #which(table(news_id_dtm1$i)<11)#check whether 0
 #=================================
@@ -101,6 +95,188 @@ news_id_dtm2
 
 category2=category1#length 72968
 news_id_for_category2=news_id_for_category1
+
+# now try replacing plural of nouns with singular in `out`
+load("singularized-unique-terms-news_id_dtm2.Rdata", verbose = T)
+load("unique-terms-news_id_dtm2.Rdata", verbose = T)
+
+names(sigularized.terms) = unique.terms
+
+# now try modifying words_count2
+head(sigularized.terms)
+head(unique.terms)
+
+dff = sigularized.terms[sigularized.terms!=unique.terms]
+names(dff) = unique.terms[sigularized.terms!=unique.terms]
+
+words_count2_modified = words_count2
+for (i in 1:length(dff)) {
+  words_count2_modified$word[which(words_count2_modified$word == names(dff)[i])] = dff[i]
+}
+
+length(unique(words_count2_modified$word)) == length(unique(sigularized.terms))
+words_count2_modified = as.data.frame(words_count2_modified)
+
+# now merge rows if (news_id_1, term_1) == (news_id_2, term_2)
+tmp0 = paste(words_count2$news_id, words_count2$word, sep = " ")
+tmp = paste(words_count2_modified$news_id, words_count2_modified$word, sep = " ")
+
+tmp[which(duplicated(tmp))] # these are rows to merge/remove
+tmp[which(!duplicated(tmp))] # these are rows to keep
+
+length(unique(tmp)) == length(tmp[which(!duplicated(tmp))])
+
+words_count2_modified_keep = words_count2_modified[which(!duplicated(tmp)),]
+
+# now merge one by one
+to_merge = tmp[which(duplicated(tmp))]
+for (i in 1:length(to_merge)) {
+  if(i %% 1000 == 0) {
+    print(paste0("current iter: ", i))
+  }
+  news.id = as.numeric(unlist(strsplit(to_merge[i], split = " "))[1])
+  wd = unlist(strsplit(to_merge[i], split = " "))[2]
+  to_keep_row_idx = which(words_count2_modified_keep$news_id == news.id
+                         & words_count2_modified_keep$word == wd)
+  tpo_merge_row_idx = which(words_count2_modified$news_id == news.id
+                            & words_count2_modified$word == wd)
+  words_count2_modified_kee[to_keep_row_idx,"n"] = sum(words_count2_modified[tpo_merge_row_idx,"n"])
+}
+
+# now check if there are duplicates in the (news_id, term) pair
+which((duplicated(paste(words_count2_modified_keep$news_id, words_count2_modified_keep$word, sep = " "))))
+# no duplicates this time
+
+# now cast `words_count2_modified_keep` back to the original class of 
+words_count2_nouns_modified = tibble(news_id = words_count2_modified_keep$news_id, 
+                                     word = words_count2_modified_keep$word,
+                                     n = words_count2_modified_keep$n)
+
+str(words_count2_nouns_modified)
+save(words_count2_nouns_modified, file = "word_count2_nound_modified.RData")
+
+
+
+
+dff2 = tmp[tmp0 != tmp]
+names(dff2) = tmp0[tmp0 != tmp]
+
+dff2[which(duplicated(dff2))]
+
+
+
+
+words_count2_modified_2 = as.data.frame(words_count2_modified)
+
+# stores the index of dff2 where the dataframe actually has two duplicate columns
+# after replacing the words (plural to singular)
+idx_dff2_duplicates = numeric(0) 
+for (i in 10000:length(dff2)) {
+  if (i %% 10000 == 0) {
+    print(paste0("current iter: ", i))
+  }
+  tmpp = unlist(strsplit(dff2[i], split = " "))
+  news_id = as.numeric(tmpp[1])
+  wrd = tmpp[2]
+  subset_df = subset(words_count2_modified_2, 
+                      subset = (words_count2_modified_2$news_id == news_id) && 
+                       (words_count2_modified_2$word == wrd))
+  if (nrow(subset_df) > 1) {
+    print(i)
+    idx_dff2_duplicates = c(idx_dff2_duplicates, i)
+  }
+}
+
+# now remove the duplicated rows and add the word counts
+dff2[idx_dff2_duplicates]
+words_count2_modified_3 = words_count2_modified_2
+
+dup_news_id = numeric(length(idx_dff2_duplicates))
+dup_wrd = character(length(idx_dff2_duplicates))
+idx_to_remove = numeric(0)
+for (j in 1:length(idx_dff2_duplicates)) {
+  dup_news_id[j] = as.numeric(unlist(strsplit(dff2[j], split = " "))[1])
+  dup_wrd[j] = (unlist(strsplit(dff2[j], split = " "))[2])
+  tmp_df = subset(words_count2_modified_2, 
+                  subset = (words_count2$news_id == dup_news_id[j]) & 
+                    (words_count2_modified_2$word == dup_wrd[j]))
+  if (nrow(tmp_df) > 1) {
+    print(tmp_df)  
+  }
+  words_count2_modified_3[as.numeric(rownames(tmp_df)[1]), "n"] = sum(tmp_df$n)
+  idx_to_remove = c(idx_to_remove, as.numeric(rownames(tmp_df)[-1]))
+}
+
+words_count2_modified_4 = words_count2_modified_3[-idx_to_remove,]
+
+# now examine if there are duplicates
+words_count2_modified_4[(duplicated(paste0(words_count2_modified_4$news_id, words_count2_modified_4$word))),]
+
+words_count2_modified_4[which(words_count2_modified_4$word == "matter"
+                              & words_count2_modified_4$news_id == 87065),]
+
+
+
+as.data.frame(words_count2)[which(words_count2$news_id == 86807),]
+
+
+for (j in 1:length(idx_dff2_duplicates)) {
+  dup_news_id[j] = as.numeric(unlist(strsplit(dff2[j], split = " "))[1])
+  dup_wrd[j] = (unlist(strsplit(dff2[j], split = " "))[2])
+  tmp_df = subset(words_count2_modified_2, 
+                  subset = (words_count2$news_id == dup_news_id[j]) & 
+                    (words_count2_modified_2$word == dup_wrd[j]))
+  print(tmp_df)
+}
+
+
+# should contain no duplicate (news_id, term) pair any more - not true
+
+
+
+
+
+
+
+
+
+cbind(dup_news_id, dup_wrd)
+
+subset(words_count2_modified_2, 
+       subset = (words_count2_modified_2$news_id == 66055) && 
+         (words_count2_modified_2$word == "body"))
+
+subset(words_count2_modified_2, 
+       subset = (words_count2$news_id == 66055))
+
+# this one
+subset(as.data.frame(words_count2), 
+       subset = (words_count2$news_id == 66055) & (words_count2_modified_2$word == "body"))
+
+subset(words_count2_modified_2, 
+       subset = (words_count2$news_id == 66055) & (words_count2_modified_2$word == "body"))
+
+
+
+
+
+
+words_count2_modified_2[(words_count2_modified_2$news_id == 124938) & 
+                          (words_count2_modified_2$word == "million"),]
+words_count2_modified_2[(words_count2_modified_2$news_id == 124938),]
+words_count2_modified_2[(words_count2$news_id == 124938),]
+
+
+words_count2_modified_2[(words_count2_modified_2$news_id == 8875) & 
+                          (words_count2_modified_2$word == "black"),]
+
+words_count2_modified_2[(words_count2_modified_2$news_id == 8875) & 
+                          (words_count2_modified_2$word == "blacks"),]
+
+
+
+
+
 
 if(FALSE){
   setwd("R_output_6")# first keep news_id with more than 10 terms and then delete Terms with one occurance
