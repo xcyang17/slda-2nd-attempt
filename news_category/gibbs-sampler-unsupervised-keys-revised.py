@@ -6,7 +6,6 @@ Created on Tue Nov 27 19:09:23 2018
 @author: CuiCan
 """
 
-from tables import *
 import numpy as np
 import timeit
 from collections import Counter
@@ -49,8 +48,6 @@ docs_array = np.asarray(docs_r)
 
 r_output = [i_r, j_r, v_r, terms_txt_lines2, docs_r]
 
-for i in range(4):
-    print(r_output[i][0:10])
 
 # initializing the \bar{Z} at random from a uniform multinomial from (1, ..., K = 31)
 K = 31 # number of topics
