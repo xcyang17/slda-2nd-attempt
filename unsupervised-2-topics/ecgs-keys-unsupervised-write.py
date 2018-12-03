@@ -1,9 +1,13 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Sun Nov 25 20:14:31 2018
+Created on Tue Nov 27 12:44:04 2018
 
 @author: apple
 """
+
+# TODO: write efficient CGS as in figure 3 of http://proceedings.mlr.press/v13/xiao10a/xiao10a.pdf
+
 # import packages
 import numpy as np
 import timeit
@@ -12,7 +16,7 @@ from operator import itemgetter
 import random
 
 # load R output
-working_dir = "/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/news_category/R_output/"
+working_dir = "/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/unsupervised-2-topics/R_output/CRIME_EDUCATION/"
 i_txt = open(working_dir + "i.txt", "r")
 i_txt_lines = i_txt.readlines()
 i_txt_lines2 = [line.rstrip('\n') for line in i_txt_lines] # remove newlines '\n'
@@ -45,10 +49,13 @@ docs_array = np.asarray(docs_r)
 
 r_output = [i_r, j_r, v_r, terms_txt_lines2, docs_r]
 
+#for i in range(4):
+#    print(r_output[i][0:10])
 
 # initializing the \bar{Z} at random from a uniform multinomial from (1, ..., K = 31)
-K = 31 # number of topics
+K = 2 # number of topics
 doc_term_dict = dict()
+doc_term_dict_R31 = dict() # add this dictionary to store the R^{31} form representation of doc_term_dict
 doc_topic_mat = np.zeros((len(docs_r), K))
 term_topic_mat = np.zeros((len(terms_txt_lines2), K))
 topic_mat = np.zeros((1, K))
@@ -64,6 +71,11 @@ for idx in range(len(j_r)):
     doc_term_dict[k] = np.random.choice(K, val_len)
     # store the n_{doc, topic}, n_{term, topic} and n_{topic}
     freq = Counter(doc_term_dict[k])
+    tmp_dict=dict(freq)
+    tmp_array = np.array(list(tmp_dict.items()))
+    tmpp = np.zeros((1, K))
+    tmpp[0,tmp_array[:,0]] = tmp_array[:,1]
+    doc_term_dict_R31[k] = tmpp    
     for existent_topic in list(freq.keys()):
         ## update n_{doc, topic}
         # (d, k)-th entry in n_{doc, topic} = 
@@ -81,7 +93,7 @@ for idx in range(len(j_r)):
         topic_mat[0,existent_topic] += freq[existent_topic]
 
 stop = timeit.default_timer()    
-print('Time: ', stop - start) # 45 seconds
+print('Time: ', stop - start) # 1.2487086339999998 seconds
 
 # define dictionaries for term_id and news_id
 T = len(terms_txt_lines2)
@@ -91,47 +103,49 @@ news_id_dict = dict(zip(docs_txt_lines2, range(len(docs_txt_lines2))))
 alpha = np.ones((1, K))
 beta = np.ones((1, T))
 
+# save the original matrix
+doc_topic_mat_orig = doc_topic_mat
+term_topic_mat_orig = term_topic_mat
+topic_mat_orig = topic_mat
+doc_term_dict_R31_orig = doc_term_dict_R31
+doc_term_dict_orig = doc_term_dict
 
+
+# Implementation of Figure 2 in http://proceedings.mlr.press/v13/xiao10a/xiao10a.pdf
 # Gibbs sampler
-MCMC_iters = 500
-a = 1 # entry in alpha
-b = 1 # entry in beta
+MCMC_iters = 500 # number of iterations
+a = 0.1 # entry in alpha
+b = 0.1 # entry in beta
 
 # store the estimated \theta_{term, topic} and \phi_{doc, topic}
-theta_sample = np.zeros((T, K, MCMC_iters))
+theta_sample = np.zeros((T, K ,MCMC_iters))
 phi_sample = np.zeros((D, K, MCMC_iters))
 
 start_1 = timeit.default_timer()
 for m in range(MCMC_iters):
     start_loop1 = timeit.default_timer()
-    for d in range(D): # doc level
-        if d%10000 == 0:
-            print(d)
-        news_id = docs_txt_lines2[d]
-        tmp = j_array[np.where(i_array == news_id_dict[news_id])] # as `lst` in original pseudo code
-        if len(tmp) == 1: 
-            Wd = [itemgetter(*tmp.tolist())(terms_txt_lines2)]
-        else:
-            Wd = list(itemgetter(*tmp.tolist())(terms_txt_lines2))
-        Nd = len(Wd)
-        for i in range(Nd): # term level
-            term = Wd[i]
-            term_id = term_id_dict[term]
-            Idi = len(doc_term_dict[(news_id, term)])
-            for j in range(Idi): # replicates of the term
-                k_hat = doc_term_dict[(news_id, term)][j]
-                doc_topic_mat[int(news_id), k_hat] -= 1 # C_{d, \hat{k}} -= 1
-                term_topic_mat[term_id, k_hat] -= 1 # C_{v, \hat{k}} -= 1
-                pks = []            
-                for k in range(K):
-                    pks += [((doc_topic_mat[int(news_id), k] + 
-                            alpha[0,k])*(term_topic_mat[term_id, k]+beta[0,k]))/(topic_mat[0,k]+beta[0,k]*T)]
-                # then normalize
-                norm_cnst = sum(pks)
-                k_sampled = np.random.choice(a = K, size = 1, p = pks/norm_cnst)[0]
-                doc_topic_mat[int(news_id), k_sampled] += 1
-                term_topic_mat[term_id, k_sampled] += 1 
-                doc_term_dict[(news_id, term)][j] = k_sampled
+    print(m)
+    for (key,value) in doc_term_dict.items():
+        news_id=key[0]
+        term=key[1]
+        term_id=term_id_dict[term]
+        Ndi=len(value)
+        doc_topic_mat[int(news_id),:] = doc_topic_mat[int(news_id),:] - doc_term_dict_R31[(news_id, term)]
+        term_topic_mat[term_id, :] = term_topic_mat[term_id, :] - doc_term_dict_R31[(news_id, term)]
+        topic_mat[0,:] = topic_mat[0,:] - doc_term_dict_R31[(news_id, term)]
+        # compute the multinomial probability
+        pks = []
+        for k in range(K):
+            pks += [((doc_topic_mat[int(news_id), k] + 
+                    a)*(term_topic_mat[term_id, k]+b))/(topic_mat[0,k]+b*T)]
+        norm_cnst = sum(pks)
+        #Ndi = len(doc_term_dict[(news_id, term)])
+        k_Ndi_samples = np.random.multinomial(Ndi, pks/norm_cnst, size = 1)
+        doc_term_dict_R31[(news_id, term)] = k_Ndi_samples
+        # update n_{doc, topic}, n_{term, topic} and n_{topic}
+        doc_topic_mat[int(news_id), :] = doc_topic_mat[int(news_id),:] + doc_term_dict_R31[(news_id, term)]
+        term_topic_mat[term_id, :] = term_topic_mat[term_id, :] + doc_term_dict_R31[(news_id, term)]
+        topic_mat[0,:] = topic_mat[0,:] + doc_term_dict_R31[(news_id, term)]
     stop_loop1 = timeit.default_timer()
     print(m, '-th loop, ', 'Time of d-loop: ', stop_loop1 - start_loop1)
     # update phi (see pg.73 of http://proceedings.mlr.press/v13/xiao10a/xiao10a.pdf)
@@ -152,19 +166,20 @@ for m in range(MCMC_iters):
     stop_loop3 = timeit.default_timer()
     print(m, '-th loop, ', 'Time of k1-loop: ', stop_loop3 - start_loop3)
 stop_1 = timeit.default_timer()    
-print('Time: ', stop_1 - start_1) # 316.25546823700006
+print('Time: ', stop_1 - start_1) # 622.18273554
 
 
+# store the files
+save_dir = "/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/ecgs-2-topics/"
+np.save(save_dir+"theta-unsupervised-ecgs-2-topics.npy", theta_sample)
+np.save(save_dir+"phi-unsupervised-ecgs-2-topics.npy", phi_sample)
 
+# save the estimates from last 10 iterations
+#theta_sample = np.load(save_dir + "theta-unsupervised-crime-education.npy")
+#phi_sample = np.load(save_dir + "phi-unsupervised-crime-education.npy")
 
-
-
-
-
-
-
-
-
+np.save(save_dir+"theta-ecgs-2-topics-last-10-iters.npy", theta_sample[:,:,489:499])
+np.save(save_dir+"phi-ecgs-2-topics-last-10-iters.npy", phi_sample[:,:,489:499])
 
 
 

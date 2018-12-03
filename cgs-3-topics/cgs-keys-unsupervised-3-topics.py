@@ -15,7 +15,7 @@ import math
 import pandas as pd
 
 # load R output
-working_dir = "/Users/CuiCan/Desktop/Slides/NCState/ST 740/Final Project/ST740-FA18-Final/news_category/R_output/"
+working_dir = "/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/unsupervised-2-topics/R_output/CRIME_EDUCATION_SPORTS/"
 i_txt = open(working_dir + "i.txt", "r")
 i_txt_lines = i_txt.readlines()
 i_txt_lines2 = [line.rstrip('\n') for line in i_txt_lines] # remove newlines '\n'
@@ -50,7 +50,7 @@ r_output = [i_r, j_r, v_r, terms_txt_lines2, docs_r]
 
 
 # initializing the \bar{Z} at random from a uniform multinomial from (1, ..., K = 31)
-K = 31 # number of topics
+K = 3 # number of topics
 doc_term_dict = dict()
 doc_topic_mat = np.zeros((len(docs_r), K))
 term_topic_mat = np.zeros((len(terms_txt_lines2), K))
@@ -84,7 +84,7 @@ for idx in range(len(j_r)):
         topic_mat[0,existent_topic] += freq[existent_topic]
 
 stop = timeit.default_timer()    
-print('Time: ', stop - start) # 45 seconds
+print('Time: ', stop - start) # 2.957352244999999 seconds
 
 # define dictionaries for term_id and news_id
 T = len(terms_txt_lines2)
@@ -102,8 +102,10 @@ theta_sample = np.zeros((T, K, MCMC_iters))
 phi_sample = np.zeros((D, K, MCMC_iters))
 
 random.seed(1111)
-start_3 = timeit.default_timer()
+start_1 = timeit.default_timer()
 for m in range(MCMC_iters):
+    start_loop1 = timeit.default_timer()
+    print(m)
     l=0
     for (key,value) in doc_term_dict.items(): # doc level
         l+=1
@@ -120,23 +122,47 @@ for m in range(MCMC_iters):
             pks = []            
             for k in range(K):
                 pks += [((doc_topic_mat[int(news_id), k] + 
-                                        alpha[0,k])*(term_topic_mat[term_id, k]+beta[0,k]))/(topic_mat[0,k]+beta[0,k]*T)]
+                                        a)*(term_topic_mat[term_id, k]+b))/(topic_mat[0,k]+b*T)]
             # then normalize
             norm_cnst = sum(pks)
             k_sampled = np.random.choice(a = K, size = 1, p = pks/norm_cnst)[0]
             doc_topic_mat[int(news_id), k_sampled] += 1
             term_topic_mat[term_id, k_sampled] += 1
             doc_term_dict[(news_id, term)][j] = k_sampled
-stop_3 = timeit.default_timer()    
-print('Time: ', stop_3 - start_3) # 197.33248764699965
-for d1 in range(D):
-    news_id1 = docs_txt_lines2[d1]
-    sum_C_d_k = sum(doc_topic_mat[int(news_id1),:])
-    phi_sample[int(news_id1),:,0] = (doc_topic_mat[int(news_id1),:] + a)/(sum_C_d_k + K*a)        
-# update theta (see pg.73 of http://proceedings.mlr.press/v13/xiao10a/xiao10a.pdf)
-# this theta_{v,k} here looks like \phi_{w,z} (= \phi_{z,w}) in U Guleph tutorial
-for k1 in range(K):
-    sum_C_v_k = sum(term_topic_mat[:,k1])
-    theta_sample[:,k1,0] = (term_topic_mat[:,k1] + b)/(sum_C_v_k + T*b)
-stop_3 = timeit.default_timer()    
-print('Time: ', stop_3 - start_3) # 199.98975172999997
+    stop_loop1 = timeit.default_timer()
+    print(m, '-th loop, ', 'Time of d-loop: ', stop_loop1 - start_loop1)
+    # update phi (see pg.73 of http://proceedings.mlr.press/v13/xiao10a/xiao10a.pdf)
+    # this phi_{d,k} here looks like \theta_{d,z} in U Guleph tutorial
+    start_loop2 = timeit.default_timer()
+    for d1 in range(D):
+        news_id1 = docs_txt_lines2[d1]
+        sum_C_d_k = sum(doc_topic_mat[int(news_id1),:])
+        phi_sample[int(news_id1),:,m] = (doc_topic_mat[int(news_id1),:] + a)/(sum_C_d_k + K*a)  
+    stop_loop2 = timeit.default_timer()
+    print(m, '-th loop, ', 'Time of d1-loop: ', stop_loop2 - start_loop2)
+    # update theta (see pg.73 of http://proceedings.mlr.press/v13/xiao10a/xiao10a.pdf)
+    # this theta_{v,k} here looks like \phi_{w,z} (= \phi_{z,w}) in U Guleph tutorial
+    start_loop3 = timeit.default_timer()
+    for k1 in range(K):
+        sum_C_v_k = sum(term_topic_mat[:,k1])
+        theta_sample[:,k1,m] = (term_topic_mat[:,k1] + b)/(sum_C_v_k + T*b)
+    stop_loop3 = timeit.default_timer()
+    print(m, '-th loop, ', 'Time of k1-loop: ', stop_loop3 - start_loop3)
+stop_1 = timeit.default_timer()    
+print('Time: ', stop_1 - start_1) # 1939.2531206200001
+
+
+
+# store the files
+save_dir = "/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/cgs-3-topics/"
+np.save(save_dir+"theta-unsupervised-cgs-3-topics.npy", theta_sample)
+np.save(save_dir+"phi-unsupervised-cgs-3-topics.npy", phi_sample)
+
+# save the estimates from last 10 iterations
+#theta_sample = np.load(save_dir + "theta-unsupervised-crime-education.npy")
+#phi_sample = np.load(save_dir + "phi-unsupervised-crime-education.npy")
+
+np.save(save_dir+"theta-cgs-3-topics-last-10-iters.npy", theta_sample[:,:,489:499])
+np.save(save_dir+"phi-cgs-3-topics-last-10-iters.npy", phi_sample[:,:,489:499])
+
+

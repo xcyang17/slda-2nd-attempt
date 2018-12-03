@@ -177,7 +177,14 @@ print('Time: ', stop_1 - start_1) # 1191.4341154319998
 
 # store the files
 save_dir = "/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/unsupervised-3-topics/"
-np.save(save_dir+"theta-unsupervised-crime-education-sports.npy", theta_sample)
-np.save(save_dir+"phi-unsupervised-crime-education-sports.npy", phi_sample)
+#np.save(save_dir+"theta-unsupervised-crime-education-sports.npy", theta_sample)
+#np.save(save_dir+"phi-unsupervised-crime-education-sports.npy", phi_sample)
+
+# save the estimates from last 10 iterations
+theta_sample = np.load(save_dir + "theta-unsupervised-crime-education-sports.npy")
+phi_sample = np.load(save_dir + "phi-unsupervised-crime-education-sports.npy")
+
+np.save(save_dir+"theta-3-topics-last-10-iters.npy", theta_sample[:,:,489:499])
+np.save(save_dir+"phi-3-topics-last-10-iters.npy", phi_sample[:,:,489:499])
 
 

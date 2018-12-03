@@ -16,7 +16,7 @@ from operator import itemgetter
 import random
 
 # load R output
-working_dir = "/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/unsupervised-2-topics/R_output/CRIME_EDUCATION/"
+working_dir = "/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/unsupervised-2-topics/R_output/CRIME_EDUCATION_SPORTS_RELIGION_MEDIA/"
 i_txt = open(working_dir + "i.txt", "r")
 i_txt_lines = i_txt.readlines()
 i_txt_lines2 = [line.rstrip('\n') for line in i_txt_lines] # remove newlines '\n'
@@ -53,7 +53,7 @@ r_output = [i_r, j_r, v_r, terms_txt_lines2, docs_r]
 #    print(r_output[i][0:10])
 
 # initializing the \bar{Z} at random from a uniform multinomial from (1, ..., K = 31)
-K = 2 # number of topics
+K = 5 # number of topics
 doc_term_dict = dict()
 doc_term_dict_R31 = dict() # add this dictionary to store the R^{31} form representation of doc_term_dict
 doc_topic_mat = np.zeros((len(docs_r), K))
@@ -93,13 +93,14 @@ for idx in range(len(j_r)):
         topic_mat[0,existent_topic] += freq[existent_topic]
 
 stop = timeit.default_timer()    
-print('Time: ', stop - start) # 1.1792 seconds
+print('Time: ', stop - start) # 3.7289321589999993 seconds
 
 # define dictionaries for term_id and news_id
 T = len(terms_txt_lines2)
 D = len(docs_r)
 term_id_dict = dict(zip(terms_txt_lines2, range(len(terms_txt_lines2))))
 news_id_dict = dict(zip(docs_txt_lines2, range(len(docs_txt_lines2))))
+
 
 # save the original matrix
 doc_topic_mat_orig = doc_topic_mat
@@ -123,36 +124,27 @@ start_1 = timeit.default_timer()
 for m in range(MCMC_iters):
     start_loop1 = timeit.default_timer()
     print(m)
-    for d in range(D): # doc level
-        if d%10000 == 0:
-            print(d)
-        news_id = docs_txt_lines2[d]
-        tmp = j_array[np.where(i_array == news_id_dict[news_id])] # as `lst` in original pseudo code
-        if len(tmp) == 1: 
-            Wd = [itemgetter(*tmp.tolist())(terms_txt_lines2)]
-        else:
-            Wd = list(itemgetter(*tmp.tolist())(terms_txt_lines2))
-        Nd = len(Wd)
-        for i in range(Nd): # term level
-            term = Wd[i]
-            term_id = term_id_dict[term]
-            # update these counting matrices
-            doc_topic_mat[int(news_id),:] = doc_topic_mat[int(news_id),:] - doc_term_dict_R31[(news_id, term)]
-            term_topic_mat[term_id, :] = term_topic_mat[term_id, :] - doc_term_dict_R31[(news_id, term)]
-            topic_mat[0,:] = topic_mat[0,:] - doc_term_dict_R31[(news_id, term)]
-            # compute the multinomial probability
-            pks = []
-            for k in range(K):
-                pks += [((doc_topic_mat[int(news_id), k] + 
-                        a)*(term_topic_mat[term_id, k]+b))/(topic_mat[0,k]+b*T)]
-            norm_cnst = sum(pks)
-            Ndi = len(doc_term_dict[(news_id, term)])
-            k_Ndi_samples = np.random.multinomial(Ndi, pks/norm_cnst, size = 1)
-            doc_term_dict_R31[(news_id, term)] = k_Ndi_samples
-            # update n_{doc, topic}, n_{term, topic} and n_{topic}
-            doc_topic_mat[int(news_id), :] = doc_topic_mat[int(news_id),:] + doc_term_dict_R31[(news_id, term)]
-            term_topic_mat[term_id, :] = term_topic_mat[term_id, :] + doc_term_dict_R31[(news_id, term)]
-            topic_mat[0,:] = topic_mat[0,:] + doc_term_dict_R31[(news_id, term)]
+    for (key,value) in doc_term_dict.items():
+        news_id=key[0]
+        term=key[1]
+        term_id=term_id_dict[term]
+        Ndi=len(value)
+        doc_topic_mat[int(news_id),:] = doc_topic_mat[int(news_id),:] - doc_term_dict_R31[(news_id, term)]
+        term_topic_mat[term_id, :] = term_topic_mat[term_id, :] - doc_term_dict_R31[(news_id, term)]
+        topic_mat[0,:] = topic_mat[0,:] - doc_term_dict_R31[(news_id, term)]
+        # compute the multinomial probability
+        pks = []
+        for k in range(K):
+            pks += [((doc_topic_mat[int(news_id), k] + 
+                    a)*(term_topic_mat[term_id, k]+b))/(topic_mat[0,k]+b*T)]
+        norm_cnst = sum(pks)
+        #Ndi = len(doc_term_dict[(news_id, term)])
+        k_Ndi_samples = np.random.multinomial(Ndi, pks/norm_cnst, size = 1)
+        doc_term_dict_R31[(news_id, term)] = k_Ndi_samples
+        # update n_{doc, topic}, n_{term, topic} and n_{topic}
+        doc_topic_mat[int(news_id), :] = doc_topic_mat[int(news_id),:] + doc_term_dict_R31[(news_id, term)]
+        term_topic_mat[term_id, :] = term_topic_mat[term_id, :] + doc_term_dict_R31[(news_id, term)]
+        topic_mat[0,:] = topic_mat[0,:] + doc_term_dict_R31[(news_id, term)]
     stop_loop1 = timeit.default_timer()
     print(m, '-th loop, ', 'Time of d-loop: ', stop_loop1 - start_loop1)
     # update phi (see pg.73 of http://proceedings.mlr.press/v13/xiao10a/xiao10a.pdf)
@@ -165,7 +157,7 @@ for m in range(MCMC_iters):
     stop_loop2 = timeit.default_timer()
     print(m, '-th loop, ', 'Time of d1-loop: ', stop_loop2 - start_loop2)
     # update theta (see pg.73 of http://proceedings.mlr.press/v13/xiao10a/xiao10a.pdf)
-    # this theta_{v,k} here looks like \phi_{w,z} (= \phi_{z,w}) in U Guleph tutorial
+    # this theta_{v,k} here looks like \phi_{w,z} (= \ph i_{z,w}) in U Guleph tutorial
     start_loop3 = timeit.default_timer()
     for k1 in range(K):
         sum_C_v_k = sum(term_topic_mat[:,k1])
@@ -173,19 +165,87 @@ for m in range(MCMC_iters):
     stop_loop3 = timeit.default_timer()
     print(m, '-th loop, ', 'Time of k1-loop: ', stop_loop3 - start_loop3)
 stop_1 = timeit.default_timer()    
-print('Time: ', stop_1 - start_1)
+print('Time: ', stop_1 - start_1) # 2046.6737181190001
+
 
 # store the files
-save_dir = "/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/unsupervised-2-topics/"
-#np.save(save_dir+"theta-unsupervised-crime-education.npy", theta_sample)
-#np.save(save_dir+"phi-unsupervised-crime-education.npy", phi_sample)
+save_dir = "/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/ecgs-5-topics/"
+np.save(save_dir+"theta-unsupervised-ecgs-5-topics.npy", theta_sample)
+np.save(save_dir+"phi-unsupervised-ecgs-5-topics.npy", phi_sample)
+
+# save theta_sample as 2D np array to be read by R
+np.save(save_dir+"theta-unsupervised-ecgs-5-topics-topic0.npy", theta_sample[:,0,:])
+np.save(save_dir+"theta-unsupervised-ecgs-5-topics-topic1.npy", theta_sample[:,1,:])
+np.save(save_dir+"theta-unsupervised-ecgs-5-topics-topic2.npy", theta_sample[:,2,:])
+np.save(save_dir+"theta-unsupervised-ecgs-5-topics-topic3.npy", theta_sample[:,3,:])
+np.save(save_dir+"theta-unsupervised-ecgs-5-topics-topic4.npy", theta_sample[:,4,:])
+
 
 # save the estimates from last 10 iterations
-theta_sample = np.load(save_dir + "theta-unsupervised-crime-education.npy")
-phi_sample = np.load(save_dir + "phi-unsupervised-crime-education.npy")
+#theta_sample = np.load(save_dir + "theta-unsupervised-crime-education.npy")
+#phi_sample = np.load(save_dir + "phi-unsupervised-crime-education.npy")
 
-np.save(save_dir+"theta-2-topics-last-10-iters.npy", theta_sample[:,:,489:499])
-np.save(save_dir+"phi-2-topics-last-10-iters.npy", phi_sample[:,:,489:499])
+np.save(save_dir+"theta-ecgs-5-topics-last-10-iters.npy", theta_sample[:,:,489:499])
+np.save(save_dir+"phi-ecgs-5-topics-last-10-iters.npy", phi_sample[:,:,489:499])
+
+
+## find out the terms corresponding to the largest value in theta_sample[:,0,burn_in:] 
+# and theta_sample[:,1,burn_in:], respectively
+top_num = 20
+burn_in = 200
+topic_0_theta = theta_sample[:,0,burn_in:]
+topic_0_theta_col_mean = np.mean(topic_0_theta, axis=1)
+frequent_term_id_topic_0 = topic_0_theta_col_mean.argsort()[-top_num:][::-1]
+list(terms_txt_lines2[i] for i in frequent_term_id_topic_0.tolist())
+topic_0_theta_col_mean[frequent_term_id_topic_0]
+
+# now examine topic_1
+topic_1_theta = theta_sample[:,1,burn_in:]
+topic_1_theta_col_mean = np.mean(topic_1_theta, axis=1)
+frequent_term_id_topic_1 = topic_1_theta_col_mean.argsort()[-top_num:][::-1]
+list(terms_txt_lines2[i] for i in frequent_term_id_topic_1.tolist())
+topic_1_theta_col_mean[frequent_term_id_topic_1]
+
+# now examine topic_2
+topic_2_theta = theta_sample[:,2,burn_in:]
+topic_2_theta_col_mean = np.mean(topic_2_theta, axis=1)
+frequent_term_id_topic_2 = topic_2_theta_col_mean.argsort()[-top_num:][::-1]
+list(terms_txt_lines2[i] for i in frequent_term_id_topic_2.tolist())
+topic_2_theta_col_mean[frequent_term_id_topic_2]
+
+# now examine topic_3
+topic_3_theta = theta_sample[:,3,burn_in:]
+topic_3_theta_col_mean = np.mean(topic_3_theta, axis=1)
+frequent_term_id_topic_3 = topic_3_theta_col_mean.argsort()[-top_num:][::-1]
+list(terms_txt_lines2[i] for i in frequent_term_id_topic_3.tolist())
+topic_3_theta_col_mean[frequent_term_id_topic_3]
+
+# now examine topic_3
+topic_4_theta = theta_sample[:,4,burn_in:]
+topic_4_theta_col_mean = np.mean(topic_4_theta, axis=1)
+frequent_term_id_topic_4 = topic_4_theta_col_mean.argsort()[-top_num:][::-1]
+list(terms_txt_lines2[i] for i in frequent_term_id_topic_4.tolist())
+topic_4_theta_col_mean[frequent_term_id_topic_4]
+
+# output the posteior mean of theta to generate word clouds in R
+theta_sample_mean = np.mean(theta_sample[:,:,199:499], axis = 2)
+np.save(save_dir+"theta-ecgs-5-topics-mean-of-last-300-iters.npy", theta_sample_mean)
+
+# compute the posterior mean (over 300 MCMC iterations, excluding 200 burn-ins)
+# using phi-sample
+phi_sample_mean = np.mean(phi_sample[:,:,199:499], axis = 2)
+np.save(save_dir+"phi-ecgs-5-topics-mean-of-last-300-iters.npy", phi_sample_mean)
+
+# output the corresponding terms
+
+
+
+np.save(terms_txt_lines2
+
+
+
+
+
 
 
 
