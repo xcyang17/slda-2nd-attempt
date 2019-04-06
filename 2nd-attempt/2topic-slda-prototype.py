@@ -12,6 +12,7 @@ import numpy as np
 import timeit
 from collections import Counter
 import random
+import re
 
 # load R output
 working_dir = "/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/unsupervised-2-topics/R_output/CRIME_EDUCATION/"
@@ -40,7 +41,7 @@ terms_txt_lines2 = [line.replace('"', '') for line in terms_txt_lines2] # remove
 
 docs_txt = open(working_dir + "docs.txt", "r")
 docs_txt_lines = docs_txt.readlines()
-docs_txt_lines2 = [line.rstrip('\n') for line in docs_txt_lines] # remove newlines '\n'
+docs_txt_lines2 = [line.rstrip('\n') for line in docs_txt_lines] # remove newlines '\n' # a list of doc IDs
 # ^^^ keep news_id as character instead of number
 docs_r = list(map(int, docs_txt_lines2))
 docs_array = np.asarray(docs_r)
@@ -97,7 +98,7 @@ print('Time: ', stop - start) # 1.2487086339999998 seconds
 T = len(terms_txt_lines2)
 D = len(docs_r)
 term_id_dict = dict(zip(terms_txt_lines2, range(len(terms_txt_lines2))))
-news_id_dict = dict(zip(docs_txt_lines2, range(len(docs_txt_lines2))))
+news_id_dict = dict(zip(docs_txt_lines2, range(len(docs_txt_lines2)))) # never used?
 
 # save the original matrix
 doc_topic_mat_orig = doc_topic_mat
@@ -106,14 +107,25 @@ topic_mat_orig = topic_mat
 doc_term_dict_R31_orig = doc_term_dict_R31
 doc_term_dict_orig = doc_term_dict
 
-# newly added for slda
+# newly added for slda - April 6, 2019
 # a dictionary that stores the Gibbs sampling probabilities pks below
 # initialzed with zero arrays of length K (K = 2 here)
 # will replace these zero arrays with pks then
 doc_term_prob_dict = {k: np.zeros(K) for k in doc_term_dict_R31.keys()}
 
-# newly added for slda
-# a dictionary 
+# newly added for slda - April 6, 2019
+# a dictionary that maps the doc id to the the existent pairs of doc id and term
+doc_doc_term_dict = {}
+tmp = [k for k in doc_term_dict_R31.keys()]
+for doc_id in docs_txt_lines2:
+    doc_doc_term_dict[doc_id] = [t for t in filter(lambda x: x[0] == doc_id, tmp)]
+
+
+# TODO: need to randomly initialize some eta (K by K matrix) for later use
+# in the comment below, use n instead of eta for simplicity, one example for K = 3:
+# suppose we arrange it by [n_11, n_12, n_13, n_21, n_22, n_23, n_31, n_32, n_33]
+# where n_i = [n_i1, n_i2, n_i3] for i = 1, 2, 3
+eta_init = np.random.uniform(-1, 1, K*K)
 
 
 
