@@ -5,7 +5,6 @@ Created on Sat Apr  6 13:45:13 2019
 
 @author: apple
 """
-# TODO: write efficient CGS as in figure 3 of http://proceedings.mlr.press/v13/xiao10a/xiao10a.pdf
 
 # import packages
 import numpy as np
@@ -13,6 +12,7 @@ import timeit
 from collections import Counter
 import random
 import re
+from scipy.optimize import linear_sum_assignment
 
 # load R output
 working_dir = "/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/unsupervised-2-topics/R_output/CRIME_EDUCATION/"
@@ -104,7 +104,7 @@ news_id_dict = dict(zip(docs_txt_lines2, range(len(docs_txt_lines2)))) # never u
 doc_topic_mat_orig = doc_topic_mat
 term_topic_mat_orig = term_topic_mat
 topic_mat_orig = topic_mat
-doc_term_dict_R31_orig = doc_term_dict_R31
+doc_term_dict_R31_orig = dict(doc_term_dict_R31) # actual copy of the dictionary
 doc_term_dict_orig = doc_term_dict
 
 # newly added for slda - April 6, 2019
@@ -127,6 +127,19 @@ for doc_id in docs_txt_lines2:
 # where n_i = [n_i1, n_i2, n_i3] for i = 1, 2, 3
 eta_init = np.random.uniform(-1, 1, K*K)
 
+# true label as an np.array
+#y = np.array([0, 1, 0])
+category_txt = open(working_dir + "category.txt", "r")
+category_txt_lines = category_txt.readlines()
+category_txt_lines2 = [line.rstrip('\n') for line in category_txt_lines] # remove newlines '\n'
+category_txt_lines3 = [line[1:-1] for line in category_txt_lines2] # remove double quotes
+# a dictionary mapping topic (e.g. CRIME) to {0, 1, ..., K-1}
+topic_num_dict = dict(zip(set(category_txt_lines3), range(K)))
+# create labels according to this dictionary
+y = np.zeros(len(category_txt_lines3))
+for topic in set(category_txt_lines3):
+    tmp = [True if item == topic else False for item in category_txt_lines3]
+    y[tmp] = topic_num_dict[topic]
 
 
 # Implementation of Figure 2 in http://proceedings.mlr.press/v13/xiao10a/xiao10a.pdf
@@ -184,14 +197,100 @@ for m in range(MCMC_iters):
         sum_C_v_k = sum(term_topic_mat[:,k1])
         theta_sample[:,k1,m] = (term_topic_mat[:,k1] + b)/(sum_C_v_k + T*b)
     stop_loop3 = timeit.default_timer()
-    print(m, '-th loop, ', 'Time of k1-loop: ', stop_loop3 - start_loop3)
-    # TODO: compute the derivative for conjugate gradient as in Fei-fei Li eqn(12)
-    
-    
-    
-    
+    print(m, '-th loop, ', 'Time of k1-loop: ', stop_loop3 - start_loop3)    
 stop_1 = timeit.default_timer()    
 print('Time: ', stop_1 - start_1) # 622.18273554
+
+## sanity check - check if the computed topic_mapping gives the best prediction accuracy
+t_mapping = topic_mapping(y, np.mean(phi_sample[:,:,199:499], axis = 2))
+phi_mean = np.mean(phi_sample[:,:,199:499], axis = 2)
+phi_pred = np.zeros(phi_mean.shape[0])
+for i in range(phi_mean.shape[0]):
+    phi_pred[i] = t_mapping[phi_mean[i,:].argmax(0)]
+# prediction accuracy for 'CRIME' class 0.9734848484848485
+np.mean(phi_pred[[True if item == 1 else False for item in y]] == y[[True if item == 1 else False for item in y]])
+# prediction accuracy for 'EDUCATION' class- 0.8897142857142857
+np.mean(phi_pred[[True if item == 0 else False for item in y]] == y[[True if item == 0 else False for item in y]])
+# it looks fine on this simplest 2-class sample
+
+
+# use labels to decide the topic identifibiality issue and output a dictionary
+def topic_mapping(y, phi):
+    """
+    :param y: the true label(s), should be an np.array of shape (n,)
+    :param phi: should be an np.array of shape (n, K), e.g. phi_sample[:,:,MCMC_iters-1]
+    :returns: a dictionary with (key, value) = (topic, index), where topic is 
+    a nonnegative integer, and index is the corresponding entry for the topic in a row of phi
+    """
+    # first get the column sum of observations for each topic
+    # in order to use scipy.optimize.linear_sum_assignment, need to first 
+    # transform the cost matrix, so that the cost matrix is nonnegative
+    # and the goal to find the smallest "cost" permutation
+    #col_sum_dict = {}
+    #cost_dict = {}
+    cost_matrix = np.zeros((K,K))
+    for topic in range(K):
+        #col_sum_dict[topic] = np.sum(phi[y==topic,:], axis = 0)
+        #cost_dict[topic] = sum(y == topic) - col_sum_dict[topic]
+        cost_matrix[topic,:] = sum(y == topic) - np.sum(phi[y==topic,:], axis = 0)
+    # now find the "optimal" topic mapping by minimizing the loss
+    row_ind, col_ind = linear_sum_assignment(cost_matrix) # row_ind is not of interest
+#    cost_matrix[row_ind, col_ind].sum()
+    return dict(zip(row_ind, col_ind))
+
+
+def log_lik_eta(y, phi, eta):
+    """
+    :param y: the true label(s), should be an np.array of shape (n,)
+    :param phi: should be an np.array of shape (n, K), e.g. phi_sample[:,:,MCMC_iters-1]
+    :param eta: should be an np.array of shape (K, K), e.g. eta_init
+    :returns: a dictionary with (key, value) = (topic, index), where topic is 
+    a nonnegative integer, and index is the corresponding entry for the topic in a row of phi
+    """
+    
+
+
+
+def bar_phi_d(d, prob_dict):
+    """
+    :param d: a string of a nonnegative integer standing for the document id
+    :param prob_dict: should be a dictionary with 
+    (key,value) = (('doc_id', 'term'), np.array(K,)), e.g. doc_term_prob_dict
+    :returns: an np.array of shape(K,)
+    """
+    # first find the keys existent in prob_dict that includes 'd'
+    Nd = 0
+    for (key, value) in doc_doc_term_dict[d]:
+        Nd = Nd + len()
+    
+    
+    
+
+def kappa_d(d, prob_dic):
+    
+
+
+
+# TODO: a function that computes the class using the estimated theta
+# April 8, 2019: maybe do not implement this function for now. try sampling as in the model
+# on pg.2 of the image annotation paper
+# NOTE: maybe later on we could try using the pks instead. try it if our method works...
+def class_doc_by_phi(pks):
+    """
+    :param pks: should be an np.array of shape (K,), e.g. phi_sample[:,:,MCMC_iters-1]
+    :returns: a tuple consisting 
+    (1) one-hot encoded np.array of shape (K,) for the predicted topic/class
+    (2) a number in {0, 1, ..., K-1} as the index for the nonzero entry as the predicted topic/class
+    """
+    # return the predicted class by selecting the one with largest value in PHI
+    # PHI should be an np.array of shape (K,) and could be from phi_sample
+    # returns a tuple consisting 
+    # (1) one-hot encoded np.array of shape (K,)
+    # (2) a number in {0, 1, ..., K-1} as the index for the nonzero entry
+    
+
+
+
 
 
 # store the files

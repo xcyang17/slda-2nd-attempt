@@ -62,11 +62,12 @@ for idx in range(8):
 
 term_id_dict = {'eat': 0, 'fish': 1, 'vegetable': 2, 'pet': 3, 'kitten': 4}
 news_id_dict = {'0': 0, '1': 1, '2': 2}
+doc_term_prob_dict = {k: np.zeros(K) for k in doc_term_dict_R31.keys()}
 
 
 # Implementation of Figure 2 in http://proceedings.mlr.press/v13/xiao10a/xiao10a.pdf
 # Gibbs sampler
-MCMC_iters = 10 # number of iterations
+MCMC_iters = 30 # number of iterations
 a = 0.1 # entry in alpha
 b = 0.1 # entry in beta
 
@@ -92,6 +93,7 @@ for m in range(MCMC_iters):
             pks += [((doc_topic_mat[int(news_id), k] + 
                     a)*(term_topic_mat[term_id, k]+b))/(topic_mat[0,k]+b*T)]
         norm_cnst = sum(pks)
+        doc_term_prob_dict[key] = np.array(pks/norm_cnst) #TODO: store pks
         #Ndi = len(doc_term_dict[(news_id, term)])
         k_Ndi_samples = np.random.multinomial(Ndi, pks/norm_cnst, size = 1)
         doc_term_dict_R31[(news_id, term)] = k_Ndi_samples
@@ -123,7 +125,7 @@ print('Time: ', stop_1 - start_1) # 622.18273554
 
 
 # generate prediction using value of phi (document x topic x iterations)
-phi_sample[:,:,9] # correct "prediction" by eyeballing
+phi_sample[:,:,29] # correct "prediction" by eyeballing
 
 # now try supervised LDA
 
