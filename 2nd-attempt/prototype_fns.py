@@ -44,6 +44,7 @@ def bar_phi_d(d, prob_dict, K, doc_doc_term_dict, doc_term_dict_R31):
     # first find the keys existent in prob_dict that includes 'd'
     Nd = 0 # number of slots/words in doc d
     pks_d = np.zeros(K,)
+    print(d)
     for (doc_id, term) in doc_doc_term_dict[d]:
         count = np.sum(doc_term_dict_R31[(doc_id, term)])
         Nd = Nd + np.sum(doc_term_dict_R31[(doc_id, term)])
@@ -51,7 +52,7 @@ def bar_phi_d(d, prob_dict, K, doc_doc_term_dict, doc_term_dict_R31):
     return pks_d/Nd
 
 # this function may be completely unnecessary
-def bar_phi_d_i(d, prob_dict, i):
+def bar_phi_d_i(d, i, prob_dict, K, doc_doc_term_dict, doc_term_dict_R31):
     """
     :param d: a string of a nonnegative integer standing for the document id
     :param prob_dict: should be a dictionary with 
@@ -59,7 +60,7 @@ def bar_phi_d_i(d, prob_dict, i):
     :param i: an index that is in {0, 1, 2, ..., K-1}
     :returns: a floating number
     """
-    rv = bar_phi_d(d, prob_dict)
+    rv = bar_phi_d(d, prob_dict, K, doc_doc_term_dict, doc_term_dict_R31)
     return rv[i]
 
 def kappa_d(d, prob_dict, eta, K, doc_doc_term_dict, doc_term_dict_R31):
@@ -91,7 +92,7 @@ def kappa_d(d, prob_dict, eta, K, doc_doc_term_dict, doc_term_dict_R31):
         tmp[c] = np.prod(tmpp)
     return np.sum(tmp)
 
-def log_lik_eta(y, eta, prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R31):
+def log_lik_eta(eta, y, prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R31):
     """
     :param y: the true label(s), should be an np.array of shape (n,), and each element
     in y is an integer in {0, 1, ..., K-1}
@@ -108,36 +109,13 @@ def log_lik_eta(y, eta, prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R31):
     for d in range(D):
         # compute inner product of \eta_{c_d} and \bar{\phi}_d
         d_true_label = y[d]
-        tmp += np.inner(eta[:,d_true_label], bar_phi_d(d, prob_dict))
+        tmp += np.inner(eta[:,d_true_label], bar_phi_d(d, prob_dict, K, doc_doc_term_dict, doc_term_dict_R31))
         sum_log_kappa_d += np.log(kappa_d(d, prob_dict, eta, doc_doc_term_dict, doc_term_dict_R31))
     rv = tmp - sum_log_kappa_d
     return rv
 
-# write this one to have the same arguments as the gradient function 'log_lik_eta_grad'
-def log_lik_eta_v2(y, eta, prob_dict, D):
-    """
-    :param y: the true label(s), should be an np.array of shape (n,), and each element
-    in y is an integer in {0, 1, ..., K-1}
-    :param phi: should be an np.array of shape (n, K), e.g. phi_sample[:,:,MCMC_iters-1]
-    :param eta: should be an np.array of shape (K, K), e.g. eta_init
-    :param prob_dict: should be a dictionary with 
-    (key,value) = (('doc_id', 'term'), np.array(K,)), e.g. doc_term_prob_dict
-    :returns: a dictionary with (key, value) = (topic, index), where topic is 
-    a nonnegative integer, and index is the corresponding entry for the topic in a row of phi
-    """
-    # will call bar_phi_d() and kappa_d()
-    tmp = 0
-    sum_log_kappa_d = 0
-    for d in range(D):
-        # compute inner product of \eta_{c_d} and \bar{\phi}_d
-        d_true_label = y[d]
-        tmp += np.inner(eta[:,d_true_label], bar_phi_d(d, prob_dict))
-        sum_log_kappa_d += np.log(kappa_d(d, prob_dict, eta))
-    rv = tmp - sum_log_kappa_d
-    return rv
 
-
-def log_lik_eta_grad_c_i(y, eta, c, i, prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R31):
+def log_lik_eta_grad_c_i(eta, y, c, i, prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R31):
     """
     :param y: the true label(s), should be an np.array of shape (n,)
     :param phi: should be an np.array of shape (n, K), e.g. phi_sample[:,:,MCMC_iters-1]
@@ -158,7 +136,7 @@ def log_lik_eta_grad_c_i(y, eta, c, i, prob_dict, D, K, doc_doc_term_dict, doc_t
     # compute \bar{\phi_{di}} for doc id in doc_label_c
     sum1 = 0
     for d in doc_label_c:
-        sum1 += bar_phi_d_i(d, prob_dict, i)
+        sum1 += bar_phi_d_i(d, i, prob_dict, K, doc_doc_term_dict, doc_term_dict_R31)
     # compute the second sum over d = 1, ...., D
     sum2 = 0
     for d in range(D):
@@ -200,11 +178,11 @@ def log_lik_eta_grad_c_i(y, eta, c, i, prob_dict, D, K, doc_doc_term_dict, doc_t
 
 
 # a wrapper that returns the whole gradient (instead of a partial derivative)
-def log_lik_eta_grad(y, eta, prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R31):
-    grad_arr = np.zeros(K, K)
+def log_lik_eta_grad(eta, y, prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R31):
+    grad_arr = np.zeros((K, K))
     for c in range(K):
         for i in range(K):
-            grad_arr[i, c] = log_lik_eta_grad_c_i(y, phi, eta, c, i, prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R31)
+            grad_arr[i, c] = log_lik_eta_grad_c_i(eta, y, c, i, prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R31)
     return grad_arr.flatten()
 
 

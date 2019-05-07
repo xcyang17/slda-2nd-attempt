@@ -181,16 +181,18 @@ eta_init = np.reshape(np.random.uniform(-1, 1, K*K), (K, K))
 
 from scipy import optimize
 
-args = (y, )
+
 opts = {'maxiter' : None,    # default value.
         'disp' : True,    # non-default value.
         'gtol' : 1e-5,    # default value.
         'norm' : np.inf,  # default value.
         'eps' : 1.4901161193847656e-08}  # default value.
 res2 = optimize.minimize(prototype_fns.log_lik_eta, eta_init, jac=prototype_fns.log_lik_eta_grad, 
-                         args=args, method='CG', options=opts)
+                         args=(y, doc_term_prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R31), method='CG', options=opts)
 
 
+res2 = optimize.minimize(log_lik_eta, eta_init, jac=log_lik_eta_grad, 
+                         args=(y, doc_term_prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R31), method='CG', options=opts)
 
 
 
