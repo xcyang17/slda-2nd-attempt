@@ -11,9 +11,7 @@ import numpy as np
 import timeit
 from collections import Counter
 import random
-import re
 from scipy.optimize import linear_sum_assignment
-import random
 
 random.seed(1)
 
@@ -67,7 +65,7 @@ topic_mat = np.zeros((1, K))
 T = len(terms_txt_lines2)
 D = len(docs_r)
 term_id_dict = dict(zip(terms_txt_lines2, range(len(terms_txt_lines2))))
-#news_id_dict = dict(zip(docs_txt_lines2, range(len(docs_txt_lines2)))) # never used?
+
 
 
 random.seed(9)

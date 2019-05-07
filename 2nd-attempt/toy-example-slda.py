@@ -9,6 +9,10 @@ Created on Tue Mar 12 17:03:11 2019
 import numpy as np
 import timeit
 from collections import Counter
+from scipy.optimize import linear_sum_assignment
+import random
+
+random.seed(1)
 
 T = 5
 D = 3
@@ -27,13 +31,11 @@ i_r = np.array([0, 0, 0, 1, 1, 2, 2, 2]) # ~ docs
 v_r = np.array([1, 1, 1, 1, 1, 1, 1, 1])
 
 
-
-
-
 doc_term_dict_R31 = {}
 doc_topic_mat = np.zeros((D, K))
 term_topic_mat = np.zeros((T, K))
 topic_mat = np.zeros((1, K))
+
 
 for idx in range(8):
     k = [j for j in doc_term_dict.keys()][idx]
@@ -64,10 +66,33 @@ term_id_dict = {'eat': 0, 'fish': 1, 'vegetable': 2, 'pet': 3, 'kitten': 4}
 news_id_dict = {'0': 0, '1': 1, '2': 2}
 doc_term_prob_dict = {k: np.zeros(K) for k in doc_term_dict_R31.keys()}
 
+# save the original matrix
+doc_topic_mat_orig = doc_topic_mat
+term_topic_mat_orig = term_topic_mat
+topic_mat_orig = topic_mat
+doc_term_dict_R31_orig = dict(doc_term_dict_R31) # actual copy of the dictionary
+doc_term_dict_orig = doc_term_dict
+
+# initialize and will update the items in MCMC iterations
+doc_term_prob_dict = {k: np.zeros(K) for k in doc_term_dict_R31.keys()}
+
+# a dictionary that maps the doc id to the the existent pairs of doc id and term
+doc_doc_term_dict = {}
+#tmp = [k for k in doc_term_dict_R31.keys()]
+#for doc_id in docs_txt_lines2:
+#    doc_doc_term_dict[doc_id] = [t for t in filter(lambda x: x[0] == doc_id, tmp)]
+doc_doc_term_dict['0'] = [('0', 'eat'), ('0', 'fish'), ('0', 'vegetable')]
+doc_doc_term_dict['1'] = [('1', 'fish'), ('1', 'pet')]
+doc_doc_term_dict['2'] = [('2', 'kitten'), ('2', 'eat'), ('2', 'fish')]
+
+# true label (not provided in the original tutorial: https://algobeans.com/2015/06/21/laymans-explanation-of-topic-modeling-with-lda-2/)
+y = np.array([0, 1, 0])
+
+
 
 # Implementation of Figure 2 in http://proceedings.mlr.press/v13/xiao10a/xiao10a.pdf
 # Gibbs sampler
-MCMC_iters = 30 # number of iterations
+MCMC_iters = 1000 # number of iterations
 a = 0.1 # entry in alpha
 b = 0.1 # entry in beta
 
@@ -125,9 +150,51 @@ print('Time: ', stop_1 - start_1) # 622.18273554
 
 
 # generate prediction using value of phi (document x topic x iterations)
-phi_sample[:,:,29] # correct "prediction" by eyeballing
+# the result oscilates at particular iterations
+for i in np.linspace(99, MCMC_iters-1, num = (MCMC_iters-1-99)/100 + 1):
+    print(phi_sample[:,:,int(i)])
+
+# see if average of iterations excluding burn-in would provide better result
+# no, it does not provide better result, bad margin
+# certain burn_in even gives only 1/3 classification accuracy, e.g. 989
+burn_in = 499
+np.mean(phi_sample[:,:, burn_in:(MCMC_iters-1)], axis = 2)
 
 # now try supervised LDA
+# spent a bit of time to import the script
+import sys
+sys.path.append('/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/2nd-attempt/')
+import prototype_fns
+
+## sanity check - check if the computed topic_mapping gives the best prediction accuracy
+t_mapping = prototype_fns.topic_mapping(
+        y, np.mean(phi_sample[:,:,burn_in:(MCMC_iters-1)], axis = 2), 2)
+phi_mean = np.mean(phi_sample[:,:,199:499], axis = 2)
+phi_pred = np.zeros(phi_mean.shape[0])
+for i in range(phi_mean.shape[0]):
+    phi_pred[i] = t_mapping[phi_mean[i,:].argmax(0)]
+# prediction accuracy is
+np.mean(1 - (y - phi_pred))
+
+# now try slda
+eta_init = np.reshape(np.random.uniform(-1, 1, K*K), (K, K))
+
+from scipy import optimize
+
+args = (y, )
+opts = {'maxiter' : None,    # default value.
+        'disp' : True,    # non-default value.
+        'gtol' : 1e-5,    # default value.
+        'norm' : np.inf,  # default value.
+        'eps' : 1.4901161193847656e-08}  # default value.
+res2 = optimize.minimize(prototype_fns.log_lik_eta, eta_init, jac=prototype_fns.log_lik_eta_grad, 
+                         args=args, method='CG', options=opts)
+
+
+
+
+
+
 
 
 

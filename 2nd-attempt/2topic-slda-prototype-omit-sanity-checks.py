@@ -12,9 +12,7 @@ import numpy as np
 import timeit
 from collections import Counter
 import random
-import re
 from scipy.optimize import linear_sum_assignment
-import random
 
 random.seed(1)
 
@@ -52,9 +50,6 @@ docs_array = np.asarray(docs_r)
 
 r_output = [i_r, j_r, v_r, terms_txt_lines2, docs_r]
 
-#for i in range(4):
-#    print(r_output[i][0:10])
-
 # initializing the \bar{Z} at random from a uniform multinomial from (1, ..., K = 31)
 K = 2 # number of topics
 doc_term_dict = dict() # in fact this dictionary is not used in the sampling part. could be removed with some change
@@ -68,8 +63,6 @@ topic_mat = np.zeros((1, K))
 T = len(terms_txt_lines2)
 D = len(docs_r)
 term_id_dict = dict(zip(terms_txt_lines2, range(len(terms_txt_lines2))))
-#news_id_dict = dict(zip(docs_txt_lines2, range(len(docs_txt_lines2)))) # never used?
-
 
 random.seed(9)
 start = timeit.default_timer()
