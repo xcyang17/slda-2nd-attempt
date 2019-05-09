@@ -209,7 +209,7 @@ eta_init = np.reshape(np.random.uniform(-1, 1, K * K), (K, K)).flatten()
 #                     doc_doc_term_dict, doc_term_dict_R31)
 
 # debugging 2 (done)
-log_lik_eta(eta_init, y, doc_term_prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R31)
+#log_lik_eta(eta_init, y, doc_term_prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R31)
 
 
 # options of fmin_cg
@@ -222,6 +222,7 @@ opts = {'maxiter': None,  # default value.
 #                         args=(y, doc_term_prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R31), method='CG',
 #                         options=opts)
 
+# now optimization terminated successfully, but log likelihood evaluates to -Inf
 res2 = optimize.minimize(log_lik_eta, eta_init, jac=log_lik_eta_grad,
                          args=(y, doc_term_prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R31), method='CG',
                          options=opts)
