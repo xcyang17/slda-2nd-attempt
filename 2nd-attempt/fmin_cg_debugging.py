@@ -1,5 +1,4 @@
 
-
 import numpy as np
 import timeit
 from collections import Counter
@@ -93,7 +92,7 @@ def kappa_d(d, prob_dict, eta, K, doc_doc_term_dict, doc_term_dict_R31):
         Nd = Nd + np.sum(doc_term_dict_R31[(doc_id, term)])
         terms_d += [term]
     # create a matrix of pks_(doc, term), each row as pks for a term
-    pks_mat = np.zeros(len(terms_d), K)
+    pks_mat = np.zeros((len(terms_d), K))
     for idx in range(len(terms_d)):
         pks_mat[idx, :] = prob_dict[(str(d), terms_d[idx])]
     # generate exp(\eta_c / N_d) as a matrix
@@ -119,13 +118,14 @@ def log_lik_eta(eta, y, prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R31):
     a nonnegative integer, and index is the corresponding entry for the topic in a row of phi
     """
     # will call bar_phi_d() and kappa_d()
+    eta = eta.reshape((K, K))
     tmp = 0
     sum_log_kappa_d = 0
     for d in range(D):
         # compute inner product of \eta_{c_d} and \bar{\phi}_d
-        d_true_label = y[d]
-        tmp += np.inner(eta[:,d_true_label], bar_phi_d(d, prob_dict, K, doc_doc_term_dict, doc_term_dict_R31))
-        sum_log_kappa_d += np.log(kappa_d(d, prob_dict, eta, doc_doc_term_dict, doc_term_dict_R31))
+        d_true_label = int(y[d])
+        tmp += np.inner(eta[:, d_true_label], bar_phi_d(d, prob_dict, K, doc_doc_term_dict, doc_term_dict_R31))
+        sum_log_kappa_d += np.log(kappa_d(d, prob_dict, eta, K, doc_doc_term_dict, doc_term_dict_R31))
     rv = tmp - sum_log_kappa_d
     return rv
 
@@ -208,7 +208,7 @@ eta_init = np.reshape(np.random.uniform(-1, 1, K * K), (K, K)).flatten()
 #log_lik_eta_grad_c_i(eta_init, y, 0, 0, doc_term_prob_dict, D, K,
 #                     doc_doc_term_dict, doc_term_dict_R31)
 
-# debugging 2
+# debugging 2 (done)
 log_lik_eta(eta_init, y, doc_term_prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R31)
 
 
