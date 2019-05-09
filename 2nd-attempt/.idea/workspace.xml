@@ -2,10 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="bde85c16-bbe3-4851-a9bc-d93300991a81" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/fmin_cg_debugging.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/2topic-slda-prototype.py" beforeDir="false" afterPath="$PROJECT_DIR$/2topic-slda-prototype.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/toy-example-slda.py" beforeDir="false" afterPath="$PROJECT_DIR$/toy-example-slda.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/fmin_cg_debugging.py" beforeDir="false" afterPath="$PROJECT_DIR$/fmin_cg_debugging.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../R-lda-5-topics/ecgs-5-topics-word-cloud.R" beforeDir="false" afterPath="$PROJECT_DIR$/../R-lda-5-topics/ecgs-5-topics-word-cloud.R" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../ecgs-2-topics/ecgs-keys-unsupervised-2-topics-write.py" beforeDir="false" afterPath="$PROJECT_DIR$/../ecgs-2-topics/ecgs-keys-unsupervised-2-topics-write.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../ecgs-5-topics/py-classification.R" beforeDir="false" afterPath="$PROJECT_DIR$/../ecgs-5-topics/py-classification.R" afterDir="false" />
@@ -29,6 +26,20 @@
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="DatabaseView">
+    <option name="SHOW_INTERMEDIATE" value="true" />
+    <option name="GROUP_DATA_SOURCES" value="true" />
+    <option name="GROUP_SCHEMA" value="true" />
+    <option name="GROUP_CONTENTS" value="false" />
+    <option name="SORT_POSITIONED" value="false" />
+    <option name="SHOW_EMPTY_GROUPS" value="false" />
+    <option name="AUTO_SCROLL_FROM_SOURCE" value="false" />
+    <option name="HIDDEN_KINDS">
+      <set />
+    </option>
+    <expand />
+    <select />
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
@@ -59,7 +70,7 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/2topic-slda-prototype.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="3075">
+            <state relative-caret-position="255">
               <caret line="209" column="88" selection-start-line="209" selection-start-column="8" selection-end-line="209" selection-end-column="88" />
             </state>
           </provider>
@@ -68,29 +79,11 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/fmin_cg_debugging.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="151">
-              <caret line="62" selection-start-line="62" selection-end-line="62" />
+            <state relative-caret-position="90">
+              <caret line="211" column="43" selection-start-line="211" selection-start-column="43" selection-end-line="211" selection-end-column="43" />
               <folding>
                 <element signature="e#2#20#0" expanded="true" />
               </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file:///anaconda3/lib/python3.7/site-packages/scipy/optimize/optimize.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="133">
-              <caret line="1264" selection-start-line="1264" selection-end-line="1264" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file:///anaconda3/lib/python3.7/site-packages/scipy/optimize/_minimize.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="140">
-              <caret line="594" selection-start-line="594" selection-end-line="594" />
             </state>
           </provider>
         </entry>
@@ -117,7 +110,7 @@
     </option>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="31" />
+    <option name="x" value="88" />
     <option name="y" value="23" />
     <option name="width" value="1400" />
     <option name="height" value="837" />
@@ -245,12 +238,12 @@
       <option name="presentableId" value="Default" />
       <updated>1557266285866</updated>
       <workItem from="1557266292492" duration="7634000" />
-      <workItem from="1557359565087" duration="717000" />
+      <workItem from="1557359565087" duration="3013000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="8351000" />
+    <option name="totallyTimeSpent" value="10647000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -262,7 +255,8 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="31" y="23" width="1400" height="837" extended-state="0" />
+    <frame x="88" y="23" width="1400" height="837" extended-state="0" />
+    <editor active="true" />
     <layout>
       <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.2533137" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
@@ -270,7 +264,7 @@
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" />
       <window_info anchor="bottom" id="Run" order="2" />
-      <window_info anchor="bottom" id="Debug" order="3" sideWeight="0.49779087" weight="0.4" />
+      <window_info active="true" anchor="bottom" id="Debug" order="3" sideWeight="0.49779087" visible="true" weight="0.4" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="6" weight="0.32885906" />
@@ -279,7 +273,7 @@
       <window_info anchor="bottom" id="Database Changes" order="9" />
       <window_info anchor="bottom" id="Event Log" order="10" sideWeight="0.5029455" side_tool="true" weight="0.32885906" />
       <window_info anchor="bottom" id="Terminal" order="11" />
-      <window_info active="true" anchor="bottom" id="Python Console" order="12" sideWeight="0.4970545" visible="true" weight="0.32885906" />
+      <window_info anchor="bottom" id="Python Console" order="12" sideWeight="0.4970545" weight="0.32885906" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
@@ -287,7 +281,7 @@
       <window_info anchor="right" id="R Graphics" order="4" />
       <window_info anchor="right" id="R Packages" order="5" />
       <window_info anchor="right" x="0" y="0" width="300" height="637" id="Documentation" order="6" side_tool="true" weight="0.3298969" />
-      <window_info anchor="right" id="Database" order="7" />
+      <window_info anchor="right" id="Database" order="7" weight="0.3298969" />
     </layout>
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -308,14 +302,19 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/fmin_cg_debugging.py</url>
-          <line>62</line>
-          <option name="timeStamp" value="8" />
+          <line>187</line>
+          <option name="timeStamp" value="12" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/fmin_cg_debugging.py</url>
+          <line>127</line>
+          <option name="timeStamp" value="13" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/2nd_attempt$fmin_cg_debugging.coverage" NAME="fmin_cg_debugging Coverage Results" MODIFIED="1557359785579" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/2nd_attempt$fmin_cg_debugging.coverage" NAME="fmin_cg_debugging Coverage Results" MODIFIED="1557362446190" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/2nd_attempt$toy_example_slda.coverage" NAME="toy-example-slda Coverage Results" MODIFIED="1557357735320" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
   <component name="editorHistoryManager">
@@ -326,13 +325,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file:///anaconda3/lib/python3.7/codecs.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="298">
-          <caret line="331" column="20" selection-start-line="331" selection-start-column="20" selection-end-line="331" selection-end-column="20" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/toy-example-slda.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="690">
@@ -340,13 +332,6 @@
           <folding>
             <element signature="e#108#126#0" expanded="true" />
           </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/2topic-slda-prototype.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="3075">
-          <caret line="209" column="88" selection-start-line="209" selection-start-column="8" selection-end-line="209" selection-end-column="88" />
         </state>
       </provider>
     </entry>
@@ -374,10 +359,31 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/2topic-slda-prototype.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="255">
+          <caret line="209" column="88" selection-start-line="209" selection-start-column="8" selection-end-line="209" selection-end-column="88" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file:///anaconda3/lib/python3.7/codecs.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="140">
+          <caret line="309" selection-start-line="309" selection-end-line="309" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$APPLICATION_HOME_DIR$/helpers/pydev/pydevd.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="317">
+          <caret line="1740" selection-start-line="1740" selection-end-line="1740" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/fmin_cg_debugging.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="151">
-          <caret line="62" selection-start-line="62" selection-end-line="62" />
+        <state relative-caret-position="90">
+          <caret line="211" column="43" selection-start-line="211" selection-start-column="43" selection-end-line="211" selection-end-column="43" />
           <folding>
             <element signature="e#2#20#0" expanded="true" />
           </folding>

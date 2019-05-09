@@ -95,7 +95,7 @@ def kappa_d(d, prob_dict, eta, K, doc_doc_term_dict, doc_term_dict_R31):
     # create a matrix of pks_(doc, term), each row as pks for a term
     pks_mat = np.zeros(len(terms_d), K)
     for idx in range(len(terms_d)):
-        pks_mat[idx, :] = prob_dict[(d, terms_d[idx])]
+        pks_mat[idx, :] = prob_dict[(str(d), terms_d[idx])]
     # generate exp(\eta_c / N_d) as a matrix
     exp_eta_mat = np.exp(eta / Nd)
     # compute inner product between pks_(doc, term) and exp(\eta_c / Nd) for fixed t and c
@@ -162,11 +162,11 @@ def log_lik_eta_grad_c_i(eta, y, c, i, prob_dict, D, K, doc_doc_term_dict, doc_t
             Nd = Nd + np.sum(doc_term_dict_R31[(doc_id, term)])
             terms_d += [term]
         # create a matrix of pks_(doc, term), each row as pks for a term
-        pks_mat = np.zeros(len(terms_d), K)
+        pks_mat = np.zeros((len(terms_d), K))
         for idx in range(len(terms_d)):
-            pks_mat[idx, :] = prob_dict[(d, terms_d[idx])]
+            pks_mat[idx, :] = prob_dict[(str(d), terms_d[idx])]
         # generate exp(\eta_c / N_d) as a matrix
-        exp_eta_mat = np.exp(eta / Nd)
+        exp_eta_mat = np.exp(eta / Nd).reshape((K, K))
         kappa_d_summands = np.zeros(K) # will store the summands of \Sigma_{c=1}^C in \kappa_d
         factor2_tmp1 = np.zeros(len(terms_d)) # will be useful for factor2
         factor2_tmp2 = np.zeros(len(terms_d)) # will be useful for factor2
@@ -174,7 +174,7 @@ def log_lik_eta_grad_c_i(eta, y, c, i, prob_dict, D, K, doc_doc_term_dict, doc_t
             tmpp = np.zeros(len(terms_d))
             tmpp2 = np.zeros(len(terms_d))
             for t in range(len(terms_d)):
-                tmpp[t] = np.inner(pks_mat[t,:], exp_eta_mat[:,cc])
+                tmpp[t] = np.inner(pks_mat[t, :], exp_eta_mat[:, cc])
                 tmpp2[t] = pow(tmpp[t], np.sum(doc_term_dict_R31[(str(d), terms_d[t])]))
             kappa_d_summands[cc] = np.prod(tmpp2)
             if cc == c: # for computation of factor2
@@ -184,7 +184,7 @@ def log_lik_eta_grad_c_i(eta, y, c, i, prob_dict, D, K, doc_doc_term_dict, doc_t
         # the first term to be multiplied in the second sum over d = 1, ..., D
         factor1 = kappa_d_summands[c] / np.sum(kappa_d_summands)
         # compute the second factor to be multiplied
-        terms_d_freq = np.zeros(0, len(terms_d)) # this may be optimized as well
+        terms_d_freq = np.zeros(len(terms_d)) # this may be optimized as well
         for t in range(len(terms_d)):
             terms_d_freq[t] = np.sum(doc_term_dict_R31[(str(d), terms_d[t])])
         factor2 = np.inner(factor2_tmp1 / factor2_tmp2, terms_d_freq)
@@ -203,6 +203,14 @@ def log_lik_eta_grad(eta, y, prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R
 
 # random initialization of eta
 eta_init = np.reshape(np.random.uniform(-1, 1, K * K), (K, K)).flatten()
+
+# debugging 1 (done)
+#log_lik_eta_grad_c_i(eta_init, y, 0, 0, doc_term_prob_dict, D, K,
+#                     doc_doc_term_dict, doc_term_dict_R31)
+
+# debugging 2
+log_lik_eta(eta_init, y, doc_term_prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R31)
+
 
 # options of fmin_cg
 opts = {'maxiter': None,  # default value.
