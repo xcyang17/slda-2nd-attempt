@@ -56,7 +56,7 @@ def bar_phi_d(d, prob_dict, K, doc_doc_term_dict, doc_term_dict_R31):
     :returns: an np.array of shape(K,)
     """
     # first find the keys existent in prob_dict that includes 'd'
-    print(d)
+    #print(d)
     Nd = 0 # number of slots/words in doc d
     pks_d = np.zeros(K,)
     for (doc_id, term) in doc_doc_term_dict[str(d)]:
@@ -189,7 +189,11 @@ def log_lik_eta_grad_c_i(eta, y, c, i, prob_dict, D, K, doc_doc_term_dict, doc_t
             terms_d_freq[t] = np.sum(doc_term_dict_R31[(str(d), terms_d[t])])
         factor2 = np.inner(factor2_tmp1 / factor2_tmp2, terms_d_freq)
         sum2 += factor1 * factor2
-    return sum1 - sum2
+    # for monitoring progress
+    print('{0: 3.6f}   {1: 3.6f}   {2: 3.6f}   {3: 3.6f}   {4: 3.6f}'.format(
+        eta[0], eta[1], eta[2], eta[3], sum1-sum2))
+    #return sum1 - sum2
+    return sum2 - sum1
 
 
 # a wrapper that returns the whole gradient (instead of a partial derivative)
@@ -223,7 +227,61 @@ opts = {'maxiter': None,  # default value.
 #                         options=opts)
 
 # now optimization terminated successfully, but log likelihood evaluates to -Inf
-res2 = optimize.minimize(log_lik_eta, eta_init, jac=log_lik_eta_grad,
+#res2 = optimize.minimize(log_lik_eta, eta_init, jac=log_lik_eta_grad,
+#                         args=(y, doc_term_prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R31), method='CG',
+#                         options=opts)
+#np.save('/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/2nd-attempt/2topic_obj/eta_final.npy', res2.x)
+
+# final eta
+#eta_final = res2.x.reshape((K, K))
+eta_final = np.load('/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/2nd-attempt/2topic_obj/eta_final.npy').reshape((K, K))
+l = log_lik_eta(eta_final, y, doc_term_prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R31)
+
+# debugging 3: negative infinity of log likelihood
+import math
+tmp = 0
+sum_log_kappa_d = 0
+neg_inf_idx = [] # length 780 out of 2542
+for d in range(D):
+    # compute inner product of \eta_{c_d} and \bar{\phi}_d
+    t = np.log(kappa_d(d, doc_term_prob_dict, eta_final, K, doc_doc_term_dict, doc_term_dict_R31))
+    if (t == math.inf):
+        print(d)
+        neg_inf_idx += [t]
+
+# consider doc 2540
+d_inf = 2540
+kappa_d(d_inf, doc_term_prob_dict, eta_final, K, doc_doc_term_dict, doc_term_dict_R31)
+# so it is indeed due to the magnitude of the eta matrix and the topic probability
+# for each term in this document (all terms belonging to topic 1 with almost 0.9999 probility)
+
+# now rerun the code and track the value of log likelihood and eta using a callback function
+res3 = optimize.minimize(log_lik_eta, eta_init, jac=log_lik_eta_grad,
                          args=(y, doc_term_prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R31), method='CG',
                          options=opts)
+np.save('/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/2nd-attempt/2topic_obj/eta_final_3.npy', res3.x)
+
+
+# now optimization terminated successfully, but log likelihood evaluates to -Inf
+# changed the sign of the log_lik_eta function
+res4 = optimize.minimize(log_lik_eta, eta_init, jac=log_lik_eta_grad,
+                         args=(y, doc_term_prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R31), method='CG',
+                         options=opts)
+np.save('/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/2nd-attempt/2topic_obj/eta_final_4.npy', res4.x)
+
+l4 = log_lik_eta(res4.x, y, doc_term_prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R31)
+
+# now check prediction accuracy
+# first generate the topic probability for each document
+
+
+
+
+
+# TODO: see prediction using the trained eta_final
+
+
+
+
+
 

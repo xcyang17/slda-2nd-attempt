@@ -174,7 +174,11 @@ def log_lik_eta_grad_c_i(eta, y, c, i, prob_dict, D, K, doc_doc_term_dict, doc_t
             terms_d_freq[t] = np.sum(doc_term_dict_R31[(str(d), terms_d[t])])
         factor2 = np.inner(factor2_tmp1 / factor2_tmp2, terms_d_freq)
         sum2 += factor1 * factor2
-    return sum1 - sum2
+    # for monitoring progress
+    print('{0: 3.6f}   {1: 3.6f}   {2: 3.6f}   {3: 3.6f}   {4: 3.6f}'.format(
+        eta[0], eta[1], eta[2], eta[3], sum1-sum2))
+    #return sum1 - sum2
+    return sum2 - sum1
 
 
 # a wrapper that returns the whole gradient (instead of a partial derivative)
