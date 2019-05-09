@@ -124,7 +124,6 @@ for doc_id in docs_txt_lines2:
     doc_doc_term_dict[doc_id] = [t for t in filter(lambda x: x[0] == doc_id, tmp)]
 
 
-# TODO: need to randomly initialize some eta (K by K matrix) for later use
 # in the comment below, use n instead of eta for simplicity, one example for K = 3:
 # suppose we arrange it by [n_11, n_12, n_13, n_21, n_22, n_23, n_31, n_32, n_33]
 # where n_i = [n_i1, n_i2, n_i3] for i = 1, 2, 3
@@ -203,6 +202,12 @@ for m in range(MCMC_iters):
     print(m, '-th loop, ', 'Time of k1-loop: ', stop_loop3 - start_loop3)    
 stop_1 = timeit.default_timer()    
 print('Time: ', stop_1 - start_1) # 622.18273554
+
+# save dictionaries and y
+np.save('/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/2nd-attempt/2topic_obj/doc_term_prob_dict.npy', doc_term_prob_dict)
+np.save('/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/2nd-attempt/2topic_obj/doc_doc_term_dict.npy', doc_doc_term_dict)
+np.save('/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/2nd-attempt/2topic_obj/doc_term_dict_R31.npy', doc_term_dict_R31)
+np.save('/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/2nd-attempt/2topic_obj/y.npy', y)
 
 ## sanity check - check if the computed topic_mapping gives the best prediction accuracy
 t_mapping = topic_mapping(y, np.mean(phi_sample[:,:,199:499], axis = 2))

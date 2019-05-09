@@ -349,15 +349,14 @@ np.mean(phi_sample[:, :, burn_in:(MCMC_iters - 1)], axis=2)
 
 # save necessary objects for fmin_cg
 # https://stackoverflow.com/questions/19201290/how-to-save-a-dictionary-to-a-file
-np.save('doc_term_prob_dict.npy', doc_term_prob_dict)
-np.save('doc_doc_term_dict.npy', doc_doc_term_dict)
-np.save('doc_term_dict_R31.npy', doc_term_dict_R31)
+np.save('/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/2nd-attempt/obj/doc_term_prob_dict.npy', doc_term_prob_dict)
+np.save('/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/2nd-attempt/obj/doc_doc_term_dict.npy', doc_doc_term_dict)
+np.save('/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/2nd-attempt/obj/doc_term_dict_R31.npy', doc_term_dict_R31)
 
 
 # now try supervised LDA
 # spent a bit of time to import the script
 import sys
-
 sys.path.append('/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/2nd-attempt/')
 import prototype_fns
 
