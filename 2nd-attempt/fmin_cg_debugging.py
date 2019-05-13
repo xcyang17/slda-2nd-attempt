@@ -56,7 +56,6 @@ def bar_phi_d(d, prob_dict, K, doc_doc_term_dict, doc_term_dict_R31):
     :returns: an np.array of shape(K,)
     """
     # first find the keys existent in prob_dict that includes 'd'
-    #print(d)
     Nd = 0 # number of slots/words in doc d
     pks_d = np.zeros(K,)
     for (doc_id, term) in doc_doc_term_dict[str(d)]:
@@ -264,6 +263,7 @@ np.save('/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/2nd-attempt/2topic_ob
 
 # now optimization terminated successfully, but log likelihood evaluates to -Inf
 # changed the sign of the log_lik_eta function
+# res4: Desired error not necessarily achieved due to precision loss.
 res4 = optimize.minimize(log_lik_eta, eta_init, jac=log_lik_eta_grad,
                          args=(y, doc_term_prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R31), method='CG',
                          options=opts)
@@ -271,15 +271,37 @@ np.save('/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/2nd-attempt/2topic_ob
 
 l4 = log_lik_eta(res4.x, y, doc_term_prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R31)
 
-# now check prediction accuracy
-# first generate the topic probability for each document
+# now check prediction accuracy, see eqn 13 of Fei-Fei Li paper for prediction rule
+# TODO: understand whether the first argmax in eqn 13 has some theorectical guarantee
+# actually, do not understand this first argmax from a theorectical perspective yet
+
+bar_phi_0 = bar_phi_d(0, doc_term_prob_dict, K, doc_doc_term_dict, doc_term_dict_R31)
+eta_final_4 = res4.x.reshape((K,K))
+np.inner(bar_phi_0, eta_final_4[:,0]) # 0.6859405034914349
+np.inner(bar_phi_0, eta_final_4[:,1]) # -0.2540980505477633
+y[0] # works for doc 0
+
+# there should not be negative term in eta?
+
+# works for doc 1
+bar_phi_1 = bar_phi_d(1, doc_term_prob_dict, K, doc_doc_term_dict, doc_term_dict_R31)
+np.inner(bar_phi_1, eta_final_4[:,0]) # 0.6859405034914349
+np.inner(bar_phi_1, eta_final_4[:,1]) # -0.2540980505477633
+y[1]
 
 
+# see prediction using the trained eta_final
+eta_4_pred = np.zeros(D)
+eta_4_prod = np.zeros((D, K))
+bar_phi = np.zeros((D,K))
+for idx in range(D):
+    bar_phi[idx,:] = bar_phi_d(int(idx), doc_term_prob_dict, K, doc_doc_term_dict, doc_term_dict_R31)
+    eta_4_prod[idx,:] = np.matmul(bar_phi[idx], eta_final_4)
+    eta_4_pred[idx] = np.argmax(eta_4_prod[idx,:])
 
+np.mean(eta_4_pred == y) # 0.9287962234461055 overall prediction accuracy
 
-
-# TODO: see prediction using the trained eta_final
-
+# TODO: compute prediction accuracy for each class and compare results with the unsupervised method
 
 
 
