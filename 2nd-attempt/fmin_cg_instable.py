@@ -103,7 +103,7 @@ def kappa_d(d, prob_dict, eta, K, doc_doc_term_dict, doc_term_dict_R31):
     return np.sum(tmp)
 
 # changed the sign of log_lik_eta
-def log_lik_eta(eta, y, prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R31):
+def log_lik_eta(eta, y, prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R31, f):
     """
     :param y: the true label(s), should be an np.array of shape (n,), and each element
     in y is an integer in {0, 1, ..., K-1}
@@ -111,6 +111,7 @@ def log_lik_eta(eta, y, prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R31):
     :param eta: should be an np.array of shape (K, K), e.g. eta_init
     :param prob_dict: should be a dictionary with
     (key,value) = (('doc_id', 'term'), np.array(K,)), e.g. doc_term_prob_dict
+    :param f: a file object to where the eta and negative log likelihood is stored
     :returns: a dictionary with (key, value) = (topic, index), where topic is
     a nonnegative integer, and index is the corresponding entry for the topic in a row of phi
     """
@@ -124,6 +125,12 @@ def log_lik_eta(eta, y, prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R31):
         tmp += np.inner(eta[:, d_true_label], bar_phi_d(d, prob_dict, K, doc_doc_term_dict, doc_term_dict_R31))
         sum_log_kappa_d += np.log(kappa_d(d, prob_dict, eta, K, doc_doc_term_dict, doc_term_dict_R31))
     rv = tmp - sum_log_kappa_d
+    # for monitoring progress
+    eta_tmp = eta.flatten()
+    print('{0: 3.6f}   {1: 3.6f}   {2: 3.6f}   {3: 3.6f}   {4: 3.6f}'.format(
+        eta_tmp[0], eta_tmp[1], eta_tmp[2], eta_tmp[3], -rv), file = f)
+    print('{0: 3.6f}   {1: 3.6f}   {2: 3.6f}   {3: 3.6f}   {4: 3.6f}'.format(
+        eta_tmp[0], eta_tmp[1], eta_tmp[2], eta_tmp[3], -rv))
     return -rv
 
 
@@ -187,19 +194,15 @@ def log_lik_eta_grad_c_i(eta, y, c, i, prob_dict, D, K, doc_doc_term_dict, doc_t
             terms_d_freq[t] = np.sum(doc_term_dict_R31[(str(d), terms_d[t])])
         factor2 = np.inner(factor2_tmp1 / factor2_tmp2, terms_d_freq)
         sum2 += factor1 * factor2
-    # for monitoring progress
-    print('{0: 3.6f}   {1: 3.6f}   {2: 3.6f}   {3: 3.6f}   {4: 3.6f}'.format(
-        eta[0], eta[1], eta[2], eta[3], sum1-sum2))
     return sum1 - sum2
-    #return sum2 - sum1
 
 
 # a wrapper that returns the whole gradient (instead of a partial derivative)
-def log_lik_eta_grad(eta, y, prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R31):
+def log_lik_eta_grad(eta, y, prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R31, f):
     grad_arr = np.zeros((K, K))
     for c in range(K):
         for i in range(K):
-            grad_arr[i, c] = log_lik_eta_grad_c_i(eta, y, c, i, prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R31)
+            grad_arr[i, c] = log_lik_eta_grad_c_i(eta, y, c, i, prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R31, f)
     return grad_arr.flatten()
 
 
@@ -220,11 +223,15 @@ K = 2
 
 
 # random initialization of eta
-random.seed(9)
-eta_init = np.reshape(np.random.uniform(-1, 1, K * K), (K, K)).flatten()
+seed = 80
+random.seed(seed)
+#eta_init = np.reshape(np.random.uniform(-1, 1, K * K), (K, K)).flatten()
+eta_init = np.identity(K).flatten() + np.random.uniform(-1, 1, K * K)
 
 # save the eta on each iteration to file
-f = open("/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/2nd-attempt/2topic_obj/output_seed9.txt", "a")
+f = open("/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/2nd-attempt/2topic_obj/output_seed" + str(seed) + "id.txt", "a")
+print('{}   {}   {}   {}   {}'.format(
+        "eta[0]", "eta[1]", "eta[2]", "eta[3]", "negative_log_lik"), file = f)
 print('{}   {}   {}   {}   {}'.format(
         "eta[0]", "eta[1]", "eta[2]", "eta[3]", "negative_log_lik"))
 eta_opt_start = timeit.default_timer()
@@ -234,15 +241,18 @@ opts = {'maxiter': None,  # default value.
         'norm': np.inf,  # default value.
         'eps': 1.4901161193847656e-08}  # default value.
 res4 = optimize.minimize(log_lik_eta, eta_init, jac=log_lik_eta_grad,
-                         args=(y, doc_term_prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R31), method='CG',
+                         args=(y, doc_term_prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R31, f), method='CG',
                          options=opts)
 eta_opt_stop = timeit.default_timer()
+print('Time of eta optimization using conjugate gradient: ', eta_opt_stop - eta_opt_start, file = f)
 print('Time of eta optimization using conjugate gradient: ', eta_opt_stop - eta_opt_start)
+f.close()
+
 
 eta_final_4 = res4.x.reshape((K,K))
-np.save('/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/2nd-attempt/2topic_obj/eta_seed9.npy', res4.x)
+np.save("/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/2nd-attempt/2topic_obj/eta_seed" + str(seed) + "id.npy", res4.x)
 
-l4 = log_lik_eta(res4.x, y, doc_term_prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R31)
+l4 = log_lik_eta(res4.x, y, doc_term_prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R31, None)
 
 # see prediction using the trained eta_final
 eta_4_pred = np.zeros(D)
@@ -253,7 +263,22 @@ for idx in range(D):
     eta_4_prod[idx,:] = np.matmul(bar_phi[idx], eta_final_4)
     eta_4_pred[idx] = np.argmax(eta_4_prod[idx,:])
 
-np.mean(eta_4_pred == y) # 0.9287962234461055 overall prediction accuracy
+np.mean(eta_4_pred == y) # 0.6884343036978757 prediction accuracy
+
+
+
+# this eta below used to give good result - 0.9287962234461055 prediction accuracy
+eta_good = np.array([0.748099, -0.351764, 0.238562, 0.448838]).reshape((K,K))
+
+eta_good_pred = np.zeros(D)
+eta_good_prod = np.zeros((D, K))
+bar_phi = np.zeros((D,K))
+for idx in range(D):
+    bar_phi[idx,:] = bar_phi_d(int(idx), doc_term_prob_dict, K, doc_doc_term_dict, doc_term_dict_R31)
+    eta_good_prod[idx,:] = np.matmul(bar_phi[idx], eta_good)
+    eta_good_pred[idx] = np.argmax(eta_good_prod[idx,:])
+
+np.mean(eta_good_pred == y)
 
 
 
