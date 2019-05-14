@@ -1,28 +1,25 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Tue May 14 16:54:02 2019
+
+@author: apple
+"""
+
+# the goal is to investigate the instable performance of eta (optimized using 
+# conjugdate gradient)
+
 
 import numpy as np
-import timeit
-from collections import Counter
 from scipy.optimize import linear_sum_assignment
 import random
+import timeit
 from scipy import optimize
 import sys
 sys.path.append('/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/2nd-attempt/')
 
-# load dictionaries
-doc_term_prob_dict = np.load('/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/2nd-attempt/2topic_obj/doc_term_prob_dict.npy').item()
-doc_doc_term_dict = np.load('/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/2nd-attempt/2topic_obj/doc_doc_term_dict.npy').item()
-doc_term_dict_R31 = np.load('/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/2nd-attempt/2topic_obj/doc_term_dict_R31.npy').item()
-y = np.load('/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/2nd-attempt/2topic_obj/y.npy')
-
-# T, D, K
-T = 8411
-D = 2542
-K = 2
 
 # define functions
-import numpy as np
-from scipy.optimize import linear_sum_assignment
-
 # use labels to decide the topic identifibiality issue and output a dictionary
 def topic_mapping(y, phi, K):
     """
@@ -105,6 +102,7 @@ def kappa_d(d, prob_dict, eta, K, doc_doc_term_dict, doc_term_dict_R31):
         tmp[c] = np.prod(tmpp)
     return np.sum(tmp)
 
+# changed the sign of log_lik_eta
 def log_lik_eta(eta, y, prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R31):
     """
     :param y: the true label(s), should be an np.array of shape (n,), and each element
@@ -126,10 +124,10 @@ def log_lik_eta(eta, y, prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R31):
         tmp += np.inner(eta[:, d_true_label], bar_phi_d(d, prob_dict, K, doc_doc_term_dict, doc_term_dict_R31))
         sum_log_kappa_d += np.log(kappa_d(d, prob_dict, eta, K, doc_doc_term_dict, doc_term_dict_R31))
     rv = tmp - sum_log_kappa_d
-    return rv
+    return -rv
 
 
-def log_lik_eta_grad_c_i(eta, y, c, i, prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R31):
+def log_lik_eta_grad_c_i(eta, y, c, i, prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R31, f):
     """
     :param y: the true label(s), should be an np.array of shape (n,)
     :param phi: should be an np.array of shape (n, K), e.g. phi_sample[:,:,MCMC_iters-1]
@@ -139,6 +137,7 @@ def log_lik_eta_grad_c_i(eta, y, c, i, prob_dict, D, K, doc_doc_term_dict, doc_t
     :param prob_dict: should be a dictionary with
     (key,value) = (('doc_id', 'term'), np.array(K,)), e.g. doc_term_prob_dict
     :param D: number of documents in the corpora
+    :param f: a file object where the printout of the input eta and the negative log likelihood
     :returns: a dictionary with (key, value) = (topic, index), where topic is
     a nonnegative integer, and index is the corresponding entry for the topic in a row of phi
     """
@@ -191,8 +190,8 @@ def log_lik_eta_grad_c_i(eta, y, c, i, prob_dict, D, K, doc_doc_term_dict, doc_t
     # for monitoring progress
     print('{0: 3.6f}   {1: 3.6f}   {2: 3.6f}   {3: 3.6f}   {4: 3.6f}'.format(
         eta[0], eta[1], eta[2], eta[3], sum1-sum2))
-    #return sum1 - sum2
-    return sum2 - sum1
+    return sum1 - sum2
+    #return sum2 - sum1
 
 
 # a wrapper that returns the whole gradient (instead of a partial derivative)
@@ -204,98 +203,46 @@ def log_lik_eta_grad(eta, y, prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R
     return grad_arr.flatten()
 
 
+#############################################################################
+#############################################################################
+#############################################################################
+
+# load dictionaries
+doc_term_prob_dict = np.load('/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/2nd-attempt/2topic_obj/doc_term_prob_dict.npy').item()
+doc_doc_term_dict = np.load('/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/2nd-attempt/2topic_obj/doc_doc_term_dict.npy').item()
+doc_term_dict_R31 = np.load('/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/2nd-attempt/2topic_obj/doc_term_dict_R31.npy').item()
+y = np.load('/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/2nd-attempt/2topic_obj/y.npy')
+
+# T, D, K
+T = 8411
+D = 2542
+K = 2
+
+
 # random initialization of eta
+random.seed(9)
 eta_init = np.reshape(np.random.uniform(-1, 1, K * K), (K, K)).flatten()
 
-# debugging 1 (done)
-#log_lik_eta_grad_c_i(eta_init, y, 0, 0, doc_term_prob_dict, D, K,
-#                     doc_doc_term_dict, doc_term_dict_R31)
-
-# debugging 2 (done)
-#log_lik_eta(eta_init, y, doc_term_prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R31)
-
-
-# options of fmin_cg
+# save the eta on each iteration to file
+f = open("/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/2nd-attempt/2topic_obj/output_seed9.txt", "a")
+print('{}   {}   {}   {}   {}'.format(
+        "eta[0]", "eta[1]", "eta[2]", "eta[3]", "negative_log_lik"))
+eta_opt_start = timeit.default_timer()
 opts = {'maxiter': None,  # default value.
         'disp': True,  # non-default value.
         'gtol': 1e-5,  # default value.
         'norm': np.inf,  # default value.
         'eps': 1.4901161193847656e-08}  # default value.
-#res2 = optimize.minimize(prototype_fns.log_lik_eta, eta_init, jac=prototype_fns.log_lik_eta_grad,
-#                         args=(y, doc_term_prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R31), method='CG',
-#                         options=opts)
-
-# now optimization terminated successfully, but log likelihood evaluates to -Inf
-#res2 = optimize.minimize(log_lik_eta, eta_init, jac=log_lik_eta_grad,
-#                         args=(y, doc_term_prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R31), method='CG',
-#                         options=opts)
-#np.save('/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/2nd-attempt/2topic_obj/eta_final.npy', res2.x)
-
-# final eta
-#eta_final = res2.x.reshape((K, K))
-#eta_final = np.load('/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/2nd-attempt/2topic_obj/eta_final.npy').reshape((K, K))
-#l = log_lik_eta(eta_final, y, doc_term_prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R31)
-
-# debugging 3: negative infinity of log likelihood
-# turns out should change the sign of the log_lik_eta function
-import math
-tmp = 0
-sum_log_kappa_d = 0
-neg_inf_idx = [] # length 780 out of 2542
-for d in range(D):
-    # compute inner product of \eta_{c_d} and \bar{\phi}_d
-    t = np.log(kappa_d(d, doc_term_prob_dict, eta_final, K, doc_doc_term_dict, doc_term_dict_R31))
-    if (t == math.inf):
-        print(d)
-        neg_inf_idx += [t]
-
-# consider doc 2540
-d_inf = 2540
-kappa_d(d_inf, doc_term_prob_dict, eta_final, K, doc_doc_term_dict, doc_term_dict_R31)
-# so it is indeed due to the magnitude of the eta matrix and the topic probability
-# for each term in this document (all terms belonging to topic 1 with almost 0.9999 probility)
-
-# now rerun the code and track the value of log likelihood and eta using a callback function
-res3 = optimize.minimize(log_lik_eta, eta_init, jac=log_lik_eta_grad,
-                         args=(y, doc_term_prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R31), method='CG',
-                         options=opts)
-np.save('/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/2nd-attempt/2topic_obj/eta_final_3.npy', res3.x)
-
-
-# now optimization terminated successfully, but log likelihood evaluates to -Inf
-# changed the sign of the log_lik_eta function
-# res4: Desired error not necessarily achieved due to precision loss.
-eta_opt_start = timeit.default_timer()
 res4 = optimize.minimize(log_lik_eta, eta_init, jac=log_lik_eta_grad,
                          args=(y, doc_term_prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R31), method='CG',
                          options=opts)
 eta_opt_stop = timeit.default_timer()
 print('Time of eta optimization using conjugate gradient: ', eta_opt_stop - eta_opt_start)
-# 607.7549470260001 seconds
 
 eta_final_4 = res4.x.reshape((K,K))
-np.save('/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/2nd-attempt/2topic_obj/eta_final_4_2.npy', res4.x)
+np.save('/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/2nd-attempt/2topic_obj/eta_seed9.npy', res4.x)
 
 l4 = log_lik_eta(res4.x, y, doc_term_prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R31)
-
-# now check prediction accuracy, see eqn 13 of Fei-Fei Li paper for prediction rule
-# TODO: understand whether the first argmax in eqn 13 has some theorectical guarantee
-# actually, do not understand this first argmax from a theorectical perspective yet
-
-bar_phi_0 = bar_phi_d(0, doc_term_prob_dict, K, doc_doc_term_dict, doc_term_dict_R31)
-
-np.inner(bar_phi_0, eta_final_4[:,0]) # 0.6859405034914349
-np.inner(bar_phi_0, eta_final_4[:,1]) # -0.2540980505477633
-y[0] # works for doc 0
-
-# there should not be negative term in eta?
-
-# works for doc 1
-bar_phi_1 = bar_phi_d(1, doc_term_prob_dict, K, doc_doc_term_dict, doc_term_dict_R31)
-np.inner(bar_phi_1, eta_final_4[:,0]) # 0.6859405034914349
-np.inner(bar_phi_1, eta_final_4[:,1]) # -0.2540980505477633
-y[1]
-
 
 # see prediction using the trained eta_final
 eta_4_pred = np.zeros(D)
@@ -307,11 +254,6 @@ for idx in range(D):
     eta_4_pred[idx] = np.argmax(eta_4_prod[idx,:])
 
 np.mean(eta_4_pred == y) # 0.9287962234461055 overall prediction accuracy
-# 0.7844217151848938 prediction accuracy on second attempt - much worse this time
 
-# TODO: compute prediction accuracy for each class and compare results with the unsupervised method
-
-
-# TODO: rerun the code on a training set and check its performance on the test set
 
 

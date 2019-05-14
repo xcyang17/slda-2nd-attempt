@@ -46,7 +46,7 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/prototype_fns.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-1805">
+            <state relative-caret-position="690">
               <caret line="47" selection-start-line="47" selection-end-line="47" />
               <folding>
                 <element signature="e#108#126#0" expanded="true" />
@@ -70,7 +70,7 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/2topic-slda-prototype.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="458">
+            <state relative-caret-position="7095">
               <caret line="477" column="26" selection-start-line="477" selection-start-column="26" selection-end-line="477" selection-end-column="26" />
             </state>
           </provider>
@@ -80,7 +80,7 @@
         <entry file="file://$PROJECT_DIR$/fmin_cg_debugging.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="124">
-              <caret line="124" column="23" selection-start-line="124" selection-start-column="18" selection-end-line="124" selection-end-column="23" />
+              <caret line="123" column="23" selection-start-line="123" selection-start-column="23" selection-end-line="123" selection-end-column="23" />
               <folding>
                 <element signature="e#1#19#0" expanded="true" />
               </folding>
@@ -110,7 +110,7 @@
     </option>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="-503" />
+    <option name="x" value="-3" />
     <option name="y" value="23" />
     <option name="width" value="1400" />
     <option name="height" value="837" />
@@ -239,11 +239,12 @@
       <updated>1557266285866</updated>
       <workItem from="1557266292492" duration="7634000" />
       <workItem from="1557359565087" duration="7574000" />
+      <workItem from="1557771685309" duration="221000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="15208000" />
+    <option name="totallyTimeSpent" value="15429000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -255,10 +256,9 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="-503" y="23" width="1400" height="837" extended-state="0" />
-    <editor active="true" />
+    <frame x="-3" y="23" width="1400" height="837" extended-state="0" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.2533137" />
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.2569956" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
@@ -320,26 +320,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/toy-example-slda.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="690">
-          <caret line="51" selection-start-line="51" selection-end-line="51" />
-          <folding>
-            <element signature="e#108#126#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/prototype_fns.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-1805">
-          <caret line="47" selection-start-line="47" selection-end-line="47" />
-          <folding>
-            <element signature="e#108#126#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file:///anaconda3/lib/python3.7/site-packages/scipy/optimize/optimize.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="133">
@@ -368,9 +348,29 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/prototype_fns.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="690">
+          <caret line="47" selection-start-line="47" selection-end-line="47" />
+          <folding>
+            <element signature="e#108#126#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/toy-example-slda.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="690">
+          <caret line="51" selection-start-line="51" selection-end-line="51" />
+          <folding>
+            <element signature="e#108#126#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/2topic-slda-prototype.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="458">
+        <state relative-caret-position="7095">
           <caret line="477" column="26" selection-start-line="477" selection-start-column="26" selection-end-line="477" selection-end-column="26" />
         </state>
       </provider>
@@ -378,7 +378,7 @@
     <entry file="file://$PROJECT_DIR$/fmin_cg_debugging.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="124">
-          <caret line="124" column="23" selection-start-line="124" selection-start-column="18" selection-end-line="124" selection-end-column="23" />
+          <caret line="123" column="23" selection-start-line="123" selection-start-column="23" selection-end-line="123" selection-end-column="23" />
           <folding>
             <element signature="e#1#19#0" expanded="true" />
           </folding>
