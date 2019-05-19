@@ -9,6 +9,12 @@ Created on Tue May 14 16:54:02 2019
 # the goal is to investigate the instable performance of eta (optimized using 
 # conjugdate gradient)
 
+# conclusion (as of May 18, 19:54 China time): the conjugate gradient method 
+# (fmin_cg and optimize(..., method = 'CG')) does move, however, (1) there is 
+# "periodic" behavior / oscillation in the points it moves to  (2) it always
+# converges to a point that is almost exactly the same as the initial point
+
+
 
 import numpy as np
 from scipy.optimize import linear_sum_assignment
@@ -81,7 +87,7 @@ def kappa_d(d, prob_dict, eta, K, doc_doc_term_dict, doc_term_dict_R31):
     :param eta: a K by K np.array of the eta, c-th column representd \eta_c in the paper
     :returns: a floating number
     """
-    # compute Nd [this is repetitive work, but do not how to optimize it yet]
+    # compute Nd [this is repetitive work, but do not optimize it yet]
     Nd = 0
     terms_d = []
     for (doc_id, term) in doc_doc_term_dict[str(d)]:
@@ -127,9 +133,9 @@ def log_lik_eta(eta, y, prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R31, f
     rv = tmp - sum_log_kappa_d
     # for monitoring progress
     eta_tmp = eta.flatten()
-    print('{0: 3.6f}   {1: 3.6f}   {2: 3.6f}   {3: 3.6f}   {4: 3.6f}'.format(
+    print('{0: 3.32f}   {1: 3.32f}   {2: 3.32f}   {3: 3.32f}   {4: 3.32f}'.format(
         eta_tmp[0], eta_tmp[1], eta_tmp[2], eta_tmp[3], -rv), file = f)
-    print('{0: 3.6f}   {1: 3.6f}   {2: 3.6f}   {3: 3.6f}   {4: 3.6f}'.format(
+    print('{0: 3.32f}   {1: 3.32f}   {2: 3.32f}   {3: 3.32f}   {4: 3.32f}'.format(
         eta_tmp[0], eta_tmp[1], eta_tmp[2], eta_tmp[3], -rv))
     return -rv
 
@@ -226,10 +232,11 @@ K = 2
 seed = 80
 random.seed(seed)
 #eta_init = np.reshape(np.random.uniform(-1, 1, K * K), (K, K)).flatten()
-eta_init = np.identity(K).flatten() + np.random.uniform(-1, 1, K * K)
+#eta_init = np.identity(K).flatten() + np.random.uniform(-1, 1, K * K)
+eta_init = eta_good
 
 # save the eta on each iteration to file
-f = open("/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/2nd-attempt/2topic_obj/output_seed" + str(seed) + "id.txt", "a")
+f = open("/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/2nd-attempt/2topic_obj/output_seed" + str(seed) + "good_eta.txt", "a")
 print('{}   {}   {}   {}   {}'.format(
         "eta[0]", "eta[1]", "eta[2]", "eta[3]", "negative_log_lik"), file = f)
 print('{}   {}   {}   {}   {}'.format(
@@ -250,7 +257,7 @@ f.close()
 
 
 eta_final_4 = res4.x.reshape((K,K))
-np.save("/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/2nd-attempt/2topic_obj/eta_seed" + str(seed) + "id.npy", res4.x)
+np.save("/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/2nd-attempt/2topic_obj/eta_seed" + str(seed) + "good_eta.npy", res4.x)
 
 l4 = log_lik_eta(res4.x, y, doc_term_prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R31, None)
 
@@ -275,10 +282,51 @@ eta_good_prod = np.zeros((D, K))
 bar_phi = np.zeros((D,K))
 for idx in range(D):
     bar_phi[idx,:] = bar_phi_d(int(idx), doc_term_prob_dict, K, doc_doc_term_dict, doc_term_dict_R31)
-    eta_good_prod[idx,:] = np.matmul(bar_phi[idx], eta_good)
+    eta_good_prod[idx,:] = np.matmul(bar_phi[idx,:], eta_good)
     eta_good_pred[idx] = np.argmax(eta_good_prod[idx,:])
 
 np.mean(eta_good_pred == y)
+
+
+# now try another optimize function
+# same result - fmin_cg eventually converges to a value almost exactly same as the initial value
+f = open("/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/2nd-attempt/2topic_obj/output_seed" + str(seed) + "_good_eta_fmin_cg.txt", "a")
+print('{}   {}   {}   {}   {}'.format(
+        "eta[0]", "eta[1]", "eta[2]", "eta[3]", "negative_log_lik"), file = f)
+print('{}   {}   {}   {}   {}'.format(
+        "eta[0]", "eta[1]", "eta[2]", "eta[3]", "negative_log_lik"))
+eta_opt_start = timeit.default_timer()
+opts = {'maxiter': None,  # default value.
+        'disp': True,  # non-default value.
+        'gtol': 1e-5,  # default value.
+        'norm': np.inf,  # default value.
+        'eps': 1.4901161193847656e-08}  # default value.
+res1 = optimize.fmin_cg(log_lik_eta, eta_good, fprime=log_lik_eta_grad, 
+                        args=(y, doc_term_prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R31, f))
+eta_opt_stop = timeit.default_timer()
+print('Time of eta optimization using conjugate gradient: ', eta_opt_stop - eta_opt_start, file = f)
+print('Time of eta optimization using conjugate gradient: ', eta_opt_stop - eta_opt_start)
+f.close()
+
+
+# now view this as a feature and try feature engineering
+# idea 1: train \eta_c only on documents of class c as a linear regression problem
+# (so should consider with intercept and without intercept)
+
+# idea 2: train each \eta_c on documents of all classes and the loss function should 
+# include a term that encourages correct classfication for documents not belonging 
+# to class c
+
+
+
+
+
+
+
+
+
+
+
 
 
 
