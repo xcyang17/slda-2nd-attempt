@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Sat May 18 19:52:11 2019
+Created on Sun May 19 13:11:08 2019
 
 @author: apple
 """
+
 
 # the goal is to try the l2 loss with scipy.optimize and see if the behavior
 # would be different from the conjugate gradient method. No longer computing 
@@ -111,9 +112,8 @@ def l2_loss_eta(eta, y, bar_phi, D, K, f):
     # for monitoring progress
     print('{}   {}   {}   {}   {}'.format(
         eta[0], eta[1], eta[2], eta[3], l2_loss), file = f)
-    if (f != None):     
-        print('{}   {}   {}   {}   {}'.format(
-            eta[0], eta[1], eta[2], eta[3], l2_loss))
+    print('{}   {}   {}   {}   {}'.format(
+        eta[0], eta[1], eta[2], eta[3], l2_loss))
     return l2_loss
 
 def l2_loss_eta_gradient(eta, y, bar_phi, D, K, f):
@@ -131,7 +131,7 @@ def l2_loss_eta_gradient(eta, y, bar_phi, D, K, f):
     for idx1 in range(K):
         for idx2 in range(K):
             sum1 = np.sum(pow(bar_phi[:, idx2], 2) * eta2[idx1, idx2] * np.array(idx2 != y))
-            sum2 = np.sum((np.matmul(bar_phi, eta2[:, idx2]) - 1) * bar_phi[:, idx2] * np.array(idx2 == y))
+            sum2 = np.sum((np.matmul(bar_phi, eta2[:,idx2]) - 1) * bar_phi[:, idx2] * np.array(idx2 == y))
             rv[idx1, idx2] = sum1 + sum2
     return rv.flatten()
 
@@ -153,14 +153,15 @@ K = 2
 
 seed = 80
 np.random.seed(seed)
-eta_init = np.reshape(np.random.uniform(-1, 1, K * K), (K, K)).flatten()
+eta_init = np.reshape(np.random.uniform(-1, 1, K * K), (K, K)).flatten() # array([ 0.04383143,  0.39881273, -0.46026206,  0.34896375])
 bar_phi = bar_phi_all_d(doc_term_prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R31)
 
 
+# BFGS method for optimization
 # save the eta on each iteration to file
-f = open("/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/2nd-attempt/l2_loss_2_topic_output/seed" + str(seed) + ".txt", "a")
+f_bfgs = open("/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/2nd-attempt/l2_loss_2_topic_output/seed" + str(seed) + "bfgs.txt", "a")
 print('{}   {}   {}   {}   {}'.format(
-        "eta[0]", "eta[1]", "eta[2]", "eta[3]", "l2_loss"), file = f)
+        "eta[0]", "eta[1]", "eta[2]", "eta[3]", "l2_loss"), file = f_bfgs)
 print('{}   {}   {}   {}   {}'.format(
         "eta[0]", "eta[1]", "eta[2]", "eta[3]", "l2_loss"))
 eta_opt_start = timeit.default_timer()
@@ -170,119 +171,65 @@ opts = {'maxiter': None,  # default value.
         'norm': np.inf,  # default value.
         'eps': 1.4901161193847656e-08}  # default value.
 res_bfgs = optimize.minimize(l2_loss_eta, eta_init, jac=l2_loss_eta_gradient,
-                         args=(y, bar_phi, D, K, f), method='bfgs',
+                         args=(y, bar_phi, D, K, f_bfgs), method='bfgs',
                          options=opts)
 eta_opt_stop = timeit.default_timer()
-print('Time of eta optimization using bfgs: ', eta_opt_stop - eta_opt_start, file = f)
+print('Time of eta optimization using bfgs: ', eta_opt_stop - eta_opt_start, file = f_bfgs)
 print('Time of eta optimization using bfgs: ', eta_opt_stop - eta_opt_start)
-f.close()
+f_bfgs.close()
 
-
+# CG method for optimization
+# save the eta on each iteration to file
+f_cg = open("/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/2nd-attempt/l2_loss_2_topic_output/seed" + str(seed) + "cg.txt", "a")
+print('{}   {}   {}   {}   {}'.format(
+        "eta[0]", "eta[1]", "eta[2]", "eta[3]", "l2_loss"), file = f_cg)
+print('{}   {}   {}   {}   {}'.format(
+        "eta[0]", "eta[1]", "eta[2]", "eta[3]", "l2_loss"))
+eta_opt_start = timeit.default_timer()
+opts = {'maxiter': None,  # default value.
+        'disp': True,  # non-default value.
+        'gtol': 1e-5,  # default value.
+        'norm': np.inf,  # default value.
+        'eps': 1.4901161193847656e-08}  # default value.
 res_cg = optimize.minimize(l2_loss_eta, eta_init, jac=l2_loss_eta_gradient,
-                         args=(y, bar_phi, D, K, None), method='cg',
+                         args=(y, bar_phi, D, K, f_cg), method='cg',
                          options=opts)
+eta_opt_stop = timeit.default_timer()
+print('Time of eta optimization using cg: ', eta_opt_stop - eta_opt_start, file = f_cg)
+print('Time of eta optimization using cg: ', eta_opt_stop - eta_opt_start)
+f_cg.close()
 
-
-# prediction accuracy
-eta_good_pred = np.zeros(D)
-eta_good_prod = np.zeros((D, K))
-eta_out = res_bfgs.x.reshape((K, K))
+# prediction accuracy on bfgs trained eta
+eta_bfgs_pred = np.zeros(D)
+eta_bfgs_prod = np.zeros((D, K))
+bar_phi = np.zeros((D, K))
+eta_bfgs = res_bfgs.x.reshape((K, K)) # array([0.7284529 , 0.59081497, 0.23011977, 0.54364689])
 for idx in range(D):
-    #bar_phi[idx,:] = bar_phi_d(int(idx), doc_term_prob_dict, K, doc_doc_term_dict, doc_term_dict_R31)
-    eta_good_prod[idx,:] = np.matmul(bar_phi[idx,:], eta_out)
-    eta_good_pred[idx] = np.argmax(eta_good_prod[idx,:])
+    bar_phi[idx,:] = bar_phi_d(int(idx), doc_term_prob_dict, K, doc_doc_term_dict, doc_term_dict_R31)
+    eta_bfgs_prod[idx,:] = np.matmul(bar_phi[idx,:], eta_bfgs)
+    eta_bfgs_pred[idx] = np.argmax(eta_bfgs_prod[idx,:])
 
-np.mean(eta_good_pred == y) # 0.9390243902439024 - better than the random try
-# so the feature engineering is functional
-# TODO: cross-validation or at least trian/test set split4563798 
+np.mean(eta_bfgs_pred == y) # 0.8733280881195908
+
+# prediction accuracy on cg trained eta
+eta_cg_pred = np.zeros(D)
+eta_cg_prod = np.zeros((D, K))
+bar_phi = np.zeros((D, K))
+eta_cg = res_cg.x.reshape((K, K)) # array([0.7284529 , 0.59081497, 0.23011977, 0.54364689]) (same as bfgs)
+for idx in range(D):
+    bar_phi[idx,:] = bar_phi_d(int(idx), doc_term_prob_dict, K, doc_doc_term_dict, doc_term_dict_R31)
+    eta_cg_prod[idx,:] = np.matmul(bar_phi[idx,:], eta_cg)
+    eta_cg_pred[idx] = np.argmax(eta_cg_prod[idx,:])
+
+np.mean(eta_cg_pred == y) # 0.8733280881195908 (same as bfgs result)
 
 
-###################################################################
-################## now try train/test set split  ##################
-###################################################################
+# now try grid search for initial value to find a good result on the train set?
+# which would require train/validation/test set split
+# or train scipy.basinhopping() https://docs.scipy.org/doc/scipy-0.18.1/reference/generated/scipy.optimize.basinhopping.html
 
-# train set and test set split
-from sklearn.model_selection import train_test_split
-X_train, X_test, y_train, y_test = train_test_split(bar_phi, y, test_size=0.2)
 
-# now train again
-seed = 80
-np.random.seed(seed)
-eta_init = np.reshape(np.random.uniform(-1, 1, K * K), (K, K)).flatten()
 
-f = open("/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/2nd-attempt/l2_loss_2_topic_output/train_seed" + str(seed) + ".txt", "a")
-print('{}   {}   {}   {}   {}'.format(
-        "eta[0]", "eta[1]", "eta[2]", "eta[3]", "l2_loss"), file = f)
-print('{}   {}   {}   {}   {}'.format(
-        "eta[0]", "eta[1]", "eta[2]", "eta[3]", "l2_loss"))
-eta_opt_start = timeit.default_timer()
-opts = {'maxiter': None,  # default value.
-        'disp': True,  # non-default value.
-        'gtol': 1e-5,  # default value.
-        'norm': np.inf,  # default value.
-        'eps': 1.4901161193847656e-08}  # default value.
-res_train = optimize.minimize(l2_loss_eta, eta_init, jac=l2_loss_eta_gradient,
-                         args=(y_train, X_train, X_train.shape[0], K, f), method='bfgs',
-                         options=opts)
-eta_opt_stop = timeit.default_timer()
-print('Time of eta optimization using bfgs: ', eta_opt_stop - eta_opt_start, file = f)
-print('Time of eta optimization using bfgs: ', eta_opt_stop - eta_opt_start)
-f.close()
-
-# train set performance:
-eta_train_pred = np.zeros(X_train.shape[0])
-eta_train_prod = np.zeros((X_train.shape[0], K))
-eta_train = res_train.x.reshape((K, K))
-for idx in range(X_test.shape[0]):
-    eta_train_prod[idx,:] = np.matmul(X_train[idx,:], eta_train)
-    eta_train_pred[idx] = np.argmax(eta_train_prod[idx,:])
-
-np.mean(eta_train_pred == y_train) # 0.5469749139203148 why so low?
-
-# see performance on test set
-eta_test_pred = np.zeros(X_test.shape[0])
-eta_test_prod = np.zeros((X_test.shape[0], K))
-eta_train = res_train.x.reshape((K, K))
-for idx in range(X_test.shape[0]):
-    eta_test_prod[idx,:] = np.matmul(X_test[idx,:], eta_train)
-    eta_test_pred[idx] = np.argmax(eta_test_prod[idx,:])
-
-np.mean(eta_test_pred == y_test) # 0.11984282907662082
-
-# compare the train set loss in the train/test set split setting
-# and the "train" set performance when the algo ran on the whole data set
-l2_loss_eta(eta_train.flatten(), y_train, X_train, X_train.shape[0], K, None) / X_train.shape[0] # 0.7732850526081845
-l2_loss_eta(res4.x, y, bar_phi, bar_phi.shape[0], K, None) / bar_phi.shape[0] # 0.20832190586061924 why?
-
-# try manually create the train set and the test set, then rerun 
-# (in case it is the split function creating trouble)
-np.random.seed(80)
-train_seq = np.array([random.randint(0, 10) for p in range(0, D)])
-train_idx = np.array([p for p in range(0, D) if train_seq[p] in list(range(8))])
-test_idx = np.array(set(range(D)).difference(set(train_idx)))
-
-# now train eta again
-f = open("/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/2nd-attempt/l2_loss_2_topic_output/manual_train_seed" + str(seed) + ".txt", "a")
-print('{}   {}   {}   {}   {}'.format(
-        "eta[0]", "eta[1]", "eta[2]", "eta[3]", "l2_loss"), file = f)
-print('{}   {}   {}   {}   {}'.format(
-        "eta[0]", "eta[1]", "eta[2]", "eta[3]", "l2_loss"))
-eta_opt_start = timeit.default_timer()
-opts = {'maxiter': None,  # default value.
-        'disp': True,  # non-default value.
-        'gtol': 1e-5,  # default value.
-        'norm': np.inf,  # default value.
-        'eps': 1.4901161193847656e-08}  # default value.
-res_train_manual = optimize.minimize(l2_loss_eta, eta_init, jac=l2_loss_eta_gradient,
-                         args=(y[train_idx], bar_phi[train_idx], train_idx.shape[0], K, f), method='bfgs',
-                         options=opts)
-eta_opt_stop = timeit.default_timer()
-print('Time of eta optimization using bfgs: ', eta_opt_stop - eta_opt_start, file = f)
-print('Time of eta optimization using bfgs: ', eta_opt_stop - eta_opt_start)
-f.close()
-
-# 0.7711994976452119 avearge L2 loss on train set
-l2_loss_eta(res_train_manual.x, y[train_idx], bar_phi[train_idx], train_idx.shape[0], K, None)
 
 
 
