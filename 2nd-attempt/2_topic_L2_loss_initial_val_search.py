@@ -90,7 +90,7 @@ def bar_phi_all_d(prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R31):
         rv[d,:] = bar_phi_d(d, prob_dict, K, doc_doc_term_dict, doc_term_dict_R31)
     return rv
 
-def l2_loss_eta(eta, y, bar_phi, D, K, f):
+def l2_loss_eta(eta, y, bar_phi, D, K, f, pr):
     """
     :param eta: should be an np.array of shape (K*K, ), e.g. eta_init
     :param y: the true label(s), should be an integer np.array of shape (n,)
@@ -111,11 +111,12 @@ def l2_loss_eta(eta, y, bar_phi, D, K, f):
     # for monitoring progress
     print('{}   {}   {}   {}   {}'.format(
         eta[0], eta[1], eta[2], eta[3], l2_loss), file = f)
-    print('{}   {}   {}   {}   {}'.format(
-        eta[0], eta[1], eta[2], eta[3], l2_loss))
+    if pr == True:       
+        print('{}   {}   {}   {}   {}'.format(
+            eta[0], eta[1], eta[2], eta[3], l2_loss))
     return l2_loss
 
-def l2_loss_eta_gradient(eta, y, bar_phi, D, K, f):
+def l2_loss_eta_gradient(eta, y, bar_phi, D, K, f, pr):
     """
     :param eta: should be an np.array of shape (K*K, ), e.g. eta_init
     :param y: the true label(s), should be an integer np.array of shape (n,)
@@ -181,15 +182,24 @@ bar_phi = bar_phi_all_d(doc_term_prob_dict, D, K, doc_doc_term_dict, doc_term_di
 #bnds = ((-1, 1), (-1, 1), (-1, 1), (-1, 1))
 bnds = (-1, 1)
 num_init_vals = 100
+
+eta_init_vals = np.zeros((num_init_vals, K*K))
+eta_final_vals = np.zeros((num_init_vals, K*K))
+l2_final_vals = np.zeros(num_init_vals)
+pred_accuracy = np.zeros(num_init_vals)
+
+
 seed = 80
 np.random.seed(seed)
 
 
 for i in range(num_init_vals):
 
-    eta_init_random = np.random.uniform(low=bnds[0], high=bnds[1])
+    eta_init_random = np.random.uniform(-1, 1, K * K)
+    eta_init_vals[i] = eta_init_random
     
-    f_cg = open("/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/2nd-attempt/l2_loss_2_topic_initial_val_search_output/seed" + str(seed) + "cg.txt", "a")
+    f_cg = open("/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/2nd-attempt/l2_loss_2_topic_initial_val_search_output/seed" + 
+                str(seed) + "init_val" + str(i) + ".txt", "a")
     print('{}   {}   {}   {}   {}'.format(
         "eta[0]", "eta[1]", "eta[2]", "eta[3]", "l2_loss"), file = f_cg)
     opts = {'maxiter': None,  # default value.
@@ -198,22 +208,22 @@ for i in range(num_init_vals):
         'norm': np.inf,  # default value.
         'eps': 1.4901161193847656e-08}  # default value.
     res = optimize.minimize(l2_loss_eta, eta_init_random, jac=l2_loss_eta_gradient,
-                         args=(y, bar_phi, D, K, f_cg), method='cg',
+                         args=(y, bar_phi, D, K, f_cg, False), method='cg',
                          options=opts)
-
+    eta_final_vals[i] = res.x
+    l2_final_vals[i] = res.fun
+    pred_accuracy[i] = np.mean(pred_eta(res.x, y, bar_phi) == y)
+    print(str(i) + "th initial value: ")
+    print('{}   {}   {}   {}   {}   {}   {}   {}   {}   {}'.format(
+        pred_accuracy[i], res.fun, eta_init_random[0], eta_init_random[1], eta_init_random[2], 
+        eta_init_random[3], res.x[0], res.x[1], res.x[2], res.x[3]))
     #min_test = minimize(f,[x_init, y_init], bounds = bnds)
+    #print(res.x, res.fun)
 
-    print(res.x, res.fun)
-
-
-
-
-# prediction accuracy
-np.mean(pred_eta(np.array([0.7284529 , 0.59081497, 0.23011977, 0.54364689]), y, bar_phi) == y)
-
-
-
-
+# maximim prediction accuracy 0.9429583005507475
+np.max(pred_accuracy)
+np.argmax(pred_accuracy)
+np.mean(pred_eta(eta_final_vals[np.argmax(pred_accuracy)], y, bar_phi) == y) # 0.9429583005507475
 
 
 
