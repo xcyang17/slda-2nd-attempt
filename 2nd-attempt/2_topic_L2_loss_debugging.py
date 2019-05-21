@@ -244,4 +244,3 @@ np.mean(eta_cg_pred == y) # 0.8733280881195908 (same as bfgs result)
 
 
 
-

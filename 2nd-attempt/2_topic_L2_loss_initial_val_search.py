@@ -92,7 +92,7 @@ def bar_phi_all_d(prob_dict, D, K, doc_doc_term_dict, doc_term_dict_R31):
 
 def l2_loss_eta(eta, y, bar_phi, D, K, f):
     """
-    :param eta: should be an np.array of shape (K, K), e.g. eta_init
+    :param eta: should be an np.array of shape (K*K, ), e.g. eta_init
     :param y: the true label(s), should be an integer np.array of shape (n,)
     :param bar_phi: a D by K matrix where each row d equals bar_phi_d for doc d
     :param D: number of documents considered
@@ -117,7 +117,7 @@ def l2_loss_eta(eta, y, bar_phi, D, K, f):
 
 def l2_loss_eta_gradient(eta, y, bar_phi, D, K, f):
     """
-    :param eta: should be an np.array of shape (K, K), e.g. eta_init
+    :param eta: should be an np.array of shape (K*K, ), e.g. eta_init
     :param y: the true label(s), should be an integer np.array of shape (n,)
     :param bar_phi: a D by K matrix where each row d equals bar_phi_d for doc d
     :param D: number of documents considered
@@ -138,7 +138,20 @@ def l2_loss_eta_gradient(eta, y, bar_phi, D, K, f):
 ################## prediction accuracy function ###################
 ###################################################################
 
-
+def pred_eta(eta, y, bar_phi):
+    """
+    :param eta: should be an np.array of shape (K*K, ), e.g. eta_init
+    :param y: the true label(s), should be an integer np.array of shape (D,)
+    :param bar_phi: a D by K matrix where each row d equals bar_phi_d for doc d
+    :param D: number of documents considered
+    :param K: number of classes of classficiation (e.g. number of topics)
+    :returns: an floating number np.array of shape (K*K,)
+    """
+    K = bar_phi.shape[1]
+    eta2 = eta.reshape((K, K))    
+    tmp_prod = np.matmul(bar_phi, eta2)
+    pred = np.argmax(tmp_prod, 1)
+    return pred
 
 
 ###################################################################
@@ -195,8 +208,8 @@ for i in range(num_init_vals):
 
 
 
-
-
+# prediction accuracy
+np.mean(pred_eta(np.array([0.7284529 , 0.59081497, 0.23011977, 0.54364689]), y, bar_phi) == y)
 
 
 
