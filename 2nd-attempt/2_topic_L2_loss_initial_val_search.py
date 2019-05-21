@@ -179,7 +179,6 @@ bar_phi = bar_phi_all_d(doc_term_prob_dict, D, K, doc_doc_term_dict, doc_term_di
 ################## try 100 random initial values ##################
 ###################################################################
 
-#bnds = ((-1, 1), (-1, 1), (-1, 1), (-1, 1))
 bnds = (-1, 1)
 num_init_vals = 100
 
@@ -217,6 +216,7 @@ for i in range(num_init_vals):
     print('{}   {}   {}   {}   {}   {}   {}   {}   {}   {}'.format(
         pred_accuracy[i], res.fun, eta_init_random[0], eta_init_random[1], eta_init_random[2], 
         eta_init_random[3], res.x[0], res.x[1], res.x[2], res.x[3]))
+    f_cg.close()
     #min_test = minimize(f,[x_init, y_init], bounds = bnds)
     #print(res.x, res.fun)
 
