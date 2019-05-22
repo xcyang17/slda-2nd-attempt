@@ -185,6 +185,7 @@ group_idx = np.array([random.randint(0, n_folds-1) for p in range(0, X_train.sha
 num_init_vals = 100
 eta_init_vals = np.zeros((num_init_vals, K*K))
 eta_final_vals = np.zeros((num_init_vals, K*K, n_folds))
+eta_ests = np.zeros((num_init_vals, K*K))
 eta_cv_vals = np.zeros((num_init_vals, K*K))
 cv_scores = np.zeros(num_init_vals)
 test_pred_accuracy = np.zeros(num_init_vals)
@@ -225,11 +226,12 @@ for i in range(num_init_vals):
         
     # now compute the average of eta estimated on each fold
     eta_cv_est = eta_cv_est / n_folds
+    eta_ests[i] = eta_cv_est
     eta_cv_score = eta_cv_score / n_folds # cv score on the "train" set
     eta_cv_vals[i] = eta_cv_est
     cv_scores[i] = eta_cv_score
     # prediction accuracy on the test set
-    test_pred_accuracy[i] = np.mean(pred_eta(eta_cv_est, y_train, X_train) == y_train)
+    test_pred_accuracy[i] = np.mean(pred_eta(eta_cv_est, y_test, X_test) == y_test)
     print(str(i) + "th initial value: ")
     print('{}   {}   {}   {}   {}   {}   {}   {}   {}   {}'.format(
         test_pred_accuracy[i], cv_scores[i], eta_init_random[0], eta_init_random[1], eta_init_random[2], 
@@ -241,18 +243,43 @@ for i in range(num_init_vals):
 ########## plot CV score against test prediction accuracy #########
 ###################################################################
 
-max(cv_scores) # 0.9449173366821242
-np.argmax(cv_scores)
-test_pred_accuracy[np.argmax(cv_scores)] # 0.9434333497294638
+np.max(cv_scores) # 0.9394548133526683
+np.argmax(cv_scores) # 36
+test_pred_accuracy[np.argmax(cv_scores)] # 0.9548133595284872
 
 # so a "linear model" (not OLS) seems to generalize well on 2-topic
 
-np.argmax(test_pred_accuracy)
+np.argmax(test_pred_accuracy) # 36
+test_pred_accuracy[np.argmax(test_pred_accuracy)]
+test_pred_accuracy[np.argmax(test_pred_accuracy)] == test_pred_accuracy[np.argmax(cv_scores)]
 
 # and the model performing best in cross-validation is also the model performing
 # the best on the test set
 
 
+###################################################################
+############## look into prediction accuracy by class #############
+###################################################################
+
+# class 0: 0.9686609686609686 test accuracy
+np.mean(pred_eta(eta_ests[int(np.argmax(cv_scores))], y_test[y_test == 0], X_test[y_test == 0]) == y_test[y_test == 0])
+
+# class 1: 0.9240506329113924 test accuracy
+np.mean(pred_eta(eta_ests[int(np.argmax(cv_scores))], y_test[y_test == 1], X_test[y_test == 1]) == y_test[y_test == 1])
+
+# which topic corresponds to which class?
+actual_topic_dict = {} # {0: 'CRIME', 1: 'EDUCATION'}
+
+# access category_txt_lines3 in the ecgs-keys-unsupervised-3-topics-write.py
+working_dir = "/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/unsupervised-2-topics/R_output/CRIME_EDUCATION/"
+category_txt = open(working_dir + "category.txt", "r")
+category_txt_lines = category_txt.readlines()
+category_txt_lines2 = [line.rstrip('\n') for line in category_txt_lines] # remove newlines '\n'
+category_txt_lines3 = [line[1:-1] for line in category_txt_lines2] # remove double quotes
+
+
+for i in range(K):
+    actual_topic_dict[int(i)] = (np.array(category_txt_lines3)[y == i])[0]
 
 
 

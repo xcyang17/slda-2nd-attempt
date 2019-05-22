@@ -211,6 +211,7 @@ group_idx = np.array([random.randint(0, n_folds-1) for p in range(0, X_train.sha
 num_init_vals = 100
 eta_init_vals = np.zeros((num_init_vals, K*K))
 eta_final_vals = np.zeros((num_init_vals, K*K, n_folds))
+eta_ests = np.zeros((num_init_vals, K*K))
 eta_cv_vals = np.zeros((num_init_vals, K*K))
 cv_scores = np.zeros(num_init_vals)
 test_pred_accuracy = np.zeros(num_init_vals)
@@ -251,11 +252,12 @@ for i in range(num_init_vals):
         
     # now compute the average of eta estimated on each fold
     eta_cv_est = eta_cv_est / n_folds
+    eta_ests[i] = eta_cv_est
     eta_cv_score = eta_cv_score / n_folds # cv score on the "train" set
     eta_cv_vals[i] = eta_cv_est
     cv_scores[i] = eta_cv_score
     # prediction accuracy on the test set
-    test_pred_accuracy[i] = np.mean(pred_eta(eta_cv_est, y_train, X_train) == y_train)
+    test_pred_accuracy[i] = np.mean(pred_eta(eta_cv_est, y_test, X_test) == y_test)
     print(str(i) + "th initial value: ")
     print('{}   {}   {}   {}   {}   {}   {}   {}   {}   {}'.format(
         test_pred_accuracy[i], cv_scores[i], eta_init_random[0], eta_init_random[1], eta_init_random[2], 
@@ -267,9 +269,9 @@ for i in range(num_init_vals):
 ########## plot CV score against test prediction accuracy #########
 ###################################################################
 
-max(cv_scores) # 0.8782867341482637
-np.argmax(cv_scores)
-test_pred_accuracy[np.argmax(cv_scores)] # 0.8785425101214575
+np.max(cv_scores) # 0.8825760662394743
+np.argmax(cv_scores) # 71
+test_pred_accuracy[np.argmax(cv_scores)] # 0.8651564185544768
 
 # so a "linear model" (not OLS) still generalizes to 3-topic setting
 
@@ -282,6 +284,25 @@ np.argmax(cv_scores) == np.argmax(test_pred_accuracy)
 ###################################################################
 ############## look into prediction accuracy by class #############
 ###################################################################
+
+# class 0: 0.8509316770186336 test accuracy
+np.mean(pred_eta(eta_ests[int(np.argmax(cv_scores))], y_test[y_test == 0], X_test[y_test == 0]) == y_test[y_test == 0])
+
+# class 1: 0.8357142857142857 test accuracy
+np.mean(pred_eta(eta_ests[int(np.argmax(cv_scores))], y_test[y_test == 1], X_test[y_test == 1]) == y_test[y_test == 1])
+
+# class 2: 0.9075144508670521 test accuracy
+np.mean(pred_eta(eta_ests[int(np.argmax(cv_scores))], y_test[y_test == 2], X_test[y_test == 2]) == y_test[y_test == 2])
+
+# which topic corresponds to which class?
+actual_topic_dict = {} # {0: 'EDUCATION', 1: 'SPORTS', 2: 'CRIME'}
+
+# access category_txt_lines3 in the ecgs-keys-unsupervised-3-topics-write.py
+for i in range(K):
+    actual_topic_dict[int(i)] = (np.array(category_txt_lines3)[y == i])[0]
+
+
+
 
 
 

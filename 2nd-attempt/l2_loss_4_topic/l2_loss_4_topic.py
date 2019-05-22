@@ -17,6 +17,7 @@ from collections import Counter
 import random
 from scipy.optimize import linear_sum_assignment
 from scipy import optimize
+import pandas as pd
 
 
 # load R output
@@ -385,10 +386,6 @@ def rearrange_bar_phi(bar_phi, y, K, topic_mapping_dict):
     rv = bar_phi[:,lst]
     return rv
 
-# some sanity check - works fine
-rearrange_bar_phi(bar_phi[0:5], y[0:5], 3, topic_mapping_dict)
-rearrange_bar_phi(bar_phi[10:20], y[10:20], 3, topic_mapping_dict)
-
 bar_phi_rearranged = rearrange_bar_phi(bar_phi, y, K, topic_mapping_dict)
 
 
@@ -411,6 +408,7 @@ group_idx = np.array([random.randint(0, n_folds-1) for p in range(0, X_train.sha
 num_init_vals = 100
 eta_init_vals = np.zeros((num_init_vals, K*K))
 eta_final_vals = np.zeros((num_init_vals, K*K, n_folds))
+eta_ests = np.zeros((num_init_vals, K*K))
 eta_cv_vals = np.zeros((num_init_vals, K*K))
 cv_scores = np.zeros(num_init_vals)
 test_pred_accuracy = np.zeros(num_init_vals)
@@ -451,11 +449,12 @@ for i in range(num_init_vals):
         
     # now compute the average of eta estimated on each fold
     eta_cv_est = eta_cv_est / n_folds
+    eta_ests[i] = eta_cv_est
     eta_cv_score = eta_cv_score / n_folds # cv score on the "train" set
     eta_cv_vals[i] = eta_cv_est
     cv_scores[i] = eta_cv_score
     # prediction accuracy on the test set
-    test_pred_accuracy[i] = np.mean(pred_eta(eta_cv_est, y_train, X_train) == y_train)
+    test_pred_accuracy[i] = np.mean(pred_eta(eta_cv_est, y_test, X_test) == y_test)
     print(str(i) + "th initial value: ")
     print('{}   {}   {}   {}   {}   {}   {}   {}   {}   {}'.format(
         test_pred_accuracy[i], cv_scores[i], eta_init_random[0], eta_init_random[1], eta_init_random[2], 
@@ -467,9 +466,9 @@ for i in range(num_init_vals):
 ########## plot CV score against test prediction accuracy #########
 ###################################################################
 
-max(cv_scores) # 0.7694412733468811
-np.argmax(cv_scores)
-test_pred_accuracy[np.argmax(cv_scores)] # 0.7697206244864421
+max(cv_scores) # 0.7611340007216864
+np.argmax(cv_scores) # 6
+test_pred_accuracy[np.argmax(cv_scores)] # 0.7857142857142857
 np.argmax(cv_scores) == np.argmax(test_pred_accuracy)
 
 # and the model performing best in cross-validation is also the model performing
@@ -479,5 +478,44 @@ np.argmax(cv_scores) == np.argmax(test_pred_accuracy)
 ###################################################################
 ############## look into prediction accuracy by class #############
 ###################################################################
+
+# class 0: 0.6738609112709832 test accuracy
+np.mean(pred_eta(eta_ests[int(np.argmax(cv_scores))], y_test[y_test == 0], X_test[y_test == 0]) == y_test[y_test == 0])
+
+# class 1: 0.7060931899641577 test accuracy
+np.mean(pred_eta(eta_ests[int(np.argmax(cv_scores))], y_test[y_test == 1], X_test[y_test == 1]) == y_test[y_test == 1])
+
+# class 2: 0.9772079772079773 test accuracy
+np.mean(pred_eta(eta_ests[int(np.argmax(cv_scores))], y_test[y_test == 2], X_test[y_test == 2]) == y_test[y_test == 2])
+
+# class 3: 0.7953216374269005 test accuracy
+np.mean(pred_eta(eta_ests[int(np.argmax(cv_scores))], y_test[y_test == 3], X_test[y_test == 3]) == y_test[y_test == 3])
+
+# todo: examine unbalancedness? and maybe modify the loss function accordingly if needed
+for i in range(K):
+    print(sum(y == i))
+
+
+# which topic corresponds to which class?
+actual_topic_dict = {} # {0: 'SPORTS', 1: 'RELIGION', 2: 'CRIME', 3: 'EDUCATION'}
+
+for i in range(K):
+    actual_topic_dict[int(i)] = (np.array(category_txt_lines3)[y == i])[0]
+    
+# so: good prediction on CRIME, OK on EDUCATION, and worst on RELIGION / SPORTS
+
+
+###################################################################
+############## look into misclassification  by class ##############
+###################################################################
+
+pred_full = pred_eta(eta_ests[int(np.argmax(cv_scores))], y, bar_phi_rearranged)
+
+four_class_df = pd.DataFrame(data = bar_phi_rearranged)
+four_class_df['y'] = y.astype('int')
+four_class_df['pred'] = pred_full
+
+
+
 
 
