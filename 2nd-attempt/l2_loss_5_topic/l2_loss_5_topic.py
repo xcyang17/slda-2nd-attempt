@@ -493,8 +493,169 @@ np.mean(pred_eta(eta_ests[int(np.argmax(cv_scores))], y_test[y_test == 3], X_tes
 # class 4: 0.03345724907063197 test accuracy
 np.mean(pred_eta(eta_ests[int(np.argmax(cv_scores))], y_test[y_test == 4], X_test[y_test == 4]) == y_test[y_test == 4])
 
+# which topic corresponds to which class?
+actual_topic_dict = {} # {0: 'SPORTS', 1: 'MEDIA', 2: 'CRIME', 3: 'EDUCATION', 4: 'RELIGION'}
+
+for i in range(K):
+    actual_topic_dict[int(i)] = (np.array(category_txt_lines3)[y == i])[0]
+
+
+
 # so indeed, probably mis-identified two clusters. what if we swap these 2 (in bar_phi) and
 # then re-fit?
 
+
+import pandas as pd
+class1_test_pred = pd.Series(pred_eta(eta_ests[int(np.argmax(cv_scores))], y_test[y_test == 1], X_test[y_test == 1]))
+
+# train accuracy on each class?
+for i in range(K):
+    print(np.mean(pred_eta(eta_ests[int(np.argmax(cv_scores))], y_train[y_train == 0], 
+                                    X_train[y_train == i]) == y_train[y_train == i]))
+
+# also 0 training accuracy on the train set for class 1 and almost zero accuracy for class 4
+pd.Series(pred_eta(eta_ests[int(np.argmax(cv_scores))], y_train[y_train == 1], 
+                            X_train[y_train == 1])).value_counts()
+pd.Series(pred_eta(eta_ests[int(np.argmax(cv_scores))], y_train[y_train == 4], 
+                            X_train[y_train == 4])).value_counts()
+
+# now try modiying the way the topic mapping dictionary is created
+def topic_mapping_l2(y, phi, K):
+    """
+    :param y: the true label(s), should be an integer np.array of shape (n,)
+    :param phi: should be an np.array of shape (n, K), e.g. phi_sample[:,:,MCMC_iters-1]
+    :returns: a dictionary with (key, value) = (topic, index), where topic is
+    a nonnegative integer, and index is the corresponding entry for the topic
+    in a row vector of phi (phi is indexed by document, this phi is the theta in our report)
+    """
+    # first get the column sum of observations for each topic
+    # in order to use scipy.optimize.linear_sum_assignment, need to first
+    # transform the cost matrix, so that the cost matrix is nonnegative
+    # and the goal to find the smallest "cost" permutation
+    #col_sum_dict = {}
+    #cost_dict = {}
+    cost_matrix = np.zeros((K,K))
+    for topic in range(K):
+        y_one_hot = np.zeros((sum(y == topic), K))
+        y_one_hot[:,topic] = 1
+        cost_matrix[topic,:] = np.sum(pow(y_one_hot - phi[y==topic,:], 2), axis = 0)
+    # now find the "optimal" topic mapping by minimizing the loss
+    row_ind, col_ind = linear_sum_assignment(cost_matrix) # row_ind is not of interest
+    return dict(zip(row_ind, col_ind))
+
+topic_mapping_dict_l2 = topic_mapping_l2(y, bar_phi_rearranged, K)
+bar_phi_rearranged2 = rearrange_bar_phi(bar_phi, y, K, topic_mapping_dict_l2)
+
+
+###########################################################################
+## train/test & cross-validation set split using new topic mapping dict ###
+###########################################################################
+
+# initial value is what is being cross-validated?
+# no, simply use average of eta estimates trained on each fold as the model
+# cv score is prediction accuracy (not l2 loss)
+
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(bar_phi_rearranged2, y, test_size=0.2)
+
+n_folds = 5
+group_idx = np.array([random.randint(0, n_folds-1) for p in range(0, X_train.shape[0])])
+
+# 100 random initial values
+num_init_vals = 100
+eta_init_vals = np.zeros((num_init_vals, K*K))
+eta_final_vals = np.zeros((num_init_vals, K*K, n_folds))
+eta_ests = np.zeros((num_init_vals, K*K))
+eta_cv_vals = np.zeros((num_init_vals, K*K))
+cv_scores = np.zeros(num_init_vals)
+test_pred_accuracy = np.zeros(num_init_vals)
+
+seed = 80
+np.random.seed(seed)
+
+for i in range(num_init_vals):
+
+    eta_init_random = np.random.uniform(-1, 1, K * K)
+    eta_init_vals[i] = eta_init_random
+    eta_cv_est = np.zeros(K*K)
+    eta_cv_score = 0
+    
+    for k in range(n_folds):
+        
+        X_train_k = X_train[group_idx != k]
+        y_train_k = y_train[group_idx != k]
+        X_valid_k = X_train[group_idx == k]
+        y_valid_k = y_train[group_idx == k]
+        
+        f_cg = open("/Files/documents/ncsu/fa18/ST740/ST740-FA18-Final/2nd-attempt/l2_loss_5_topic/initial_val_search_output_dict2/seed" + 
+                    str(seed) + "init_val" + str(i) + "fold" + str(k) + ".txt", "a")
+        print('{}   {}   {}   {}   {}'.format(
+            "eta[0]", "eta[1]", "eta[2]", "eta[3]", "l2_loss"), file = f_cg)
+        opts = {'maxiter': None,  # default value.
+            'disp': True,  # non-default value.
+            'gtol': 1e-5,  # default value.
+            'norm': np.inf,  # default value.
+            'eps': 1.4901161193847656e-08}  # default value.
+        res = optimize.minimize(l2_loss_eta, eta_init_random, jac=l2_loss_eta_gradient,
+                             args=(y_train_k, X_train_k, X_train_k.shape[0], K, f_cg, False), 
+                             method='cg', options=opts)
+        eta_final_vals[i,:,k] = res.x
+        eta_cv_est += res.x
+        eta_cv_score += np.mean(pred_eta(res.x, y_valid_k, X_valid_k) == y_valid_k)
+        f_cg.close()
+        
+    # now compute the average of eta estimated on each fold
+    eta_cv_est = eta_cv_est / n_folds
+    eta_ests[i] = eta_cv_est
+    eta_cv_score = eta_cv_score / n_folds # cv score on the "train" set
+    eta_cv_vals[i] = eta_cv_est
+    cv_scores[i] = eta_cv_score
+    # prediction accuracy on the test set
+    test_pred_accuracy[i] = np.mean(pred_eta(eta_cv_est, y_test, X_test) == y_test)
+    print(str(i) + "th initial value: ")
+    print('{}   {}   {}   {}   {}   {}   {}   {}   {}   {}'.format(
+        test_pred_accuracy[i], cv_scores[i], eta_init_random[0], eta_init_random[1], eta_init_random[2], 
+        eta_init_random[3], eta_cv_est[0], eta_cv_est[1], eta_cv_est[2], eta_cv_est[3]))
+
+
+###################################################################
+########## plot CV score against test prediction accuracy #########
+###################################################################
+
+np.max(cv_scores) # 0.5108543103259975
+np.argmax(cv_scores) # 74
+test_pred_accuracy[np.argmax(cv_scores)] # 0.5213567839195979
+np.argmax(cv_scores) == np.argmax(test_pred_accuracy)
+
+# slight improvement (3%) after changing the topic dictionary, but still much worse
+# than the benchmark (argmax on bar_phi_rearranged)
+# maybe this says such a simple linear model would not work.
+# TODO: try 1. one-vs-all linear classifiers 2. non linear methods (RF, SVM?) 3. NN
+
+
+###################################################################
+############## look into prediction accuracy by class #############
+###################################################################
+
+# class 0: 0.7014563106796117 test accuracy (worse by 8%)
+np.mean(pred_eta(eta_ests[int(np.argmax(cv_scores))], y_test[y_test == 0], X_test[y_test == 0]) == y_test[y_test == 0])
+
+# class 1: 0.816793893129771 test accuracy (vs 0)
+np.mean(pred_eta(eta_ests[int(np.argmax(cv_scores))], y_test[y_test == 1], X_test[y_test == 1]) == y_test[y_test == 1])
+
+# class 2: 0 test accuracy (compared to 0.8537859007832899)
+np.mean(pred_eta(eta_ests[int(np.argmax(cv_scores))], y_test[y_test == 2], X_test[y_test == 2]) == y_test[y_test == 2])
+
+# class 3: 0 test accuracy (was 0.7133757961783439)
+np.mean(pred_eta(eta_ests[int(np.argmax(cv_scores))], y_test[y_test == 3], X_test[y_test == 3]) == y_test[y_test == 3])
+
+# class 4: 0.7885304659498208 test accuracy (was 0.03345724907063197)
+np.mean(pred_eta(eta_ests[int(np.argmax(cv_scores))], y_test[y_test == 4], X_test[y_test == 4]) == y_test[y_test == 4])
+
+# which topic corresponds to which class?
+actual_topic_dict2 = {} # {0: 'SPORTS', 1: 'MEDIA', 2: 'CRIME', 3: 'EDUCATION', 4: 'RELIGION'}
+
+for i in range(K):
+    actual_topic_dict2[int(i)] = (np.array(category_txt_lines3)[y == i])[0]
 
 

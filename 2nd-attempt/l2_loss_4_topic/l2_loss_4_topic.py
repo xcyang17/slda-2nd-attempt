@@ -516,6 +516,14 @@ four_class_df['y'] = y.astype('int')
 four_class_df['pred'] = pred_full
 
 
+###################################################################
+################# compare with simple argmax method ###############
+###################################################################
 
+simple_pred = np.argmax(bar_phi_rearranged, axis = 1)
+np.mean(simple_pred == y) # 0.8220506079526783
+
+# when there are 4 topics, the simple method starts to outperform the linear method
+# so probably there is non linearity affecting the result.
 
 

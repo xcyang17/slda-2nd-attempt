@@ -281,6 +281,20 @@ category_txt_lines3 = [line[1:-1] for line in category_txt_lines2] # remove doub
 for i in range(K):
     actual_topic_dict[int(i)] = (np.array(category_txt_lines3)[y == i])[0]
 
+for i in range(K):
+    print(sum(y == i))
+    
+
+###################################################################
+################# compare with simple argmax method ###############
+###################################################################
+
+simple_pred = np.argmax(bar_phi, axis = 1)
+np.mean(simple_pred == y) # 0.9232887490165225
+
+# so the linear method outperforms the simple method in the 2-class setting
+
+
 
 
 
